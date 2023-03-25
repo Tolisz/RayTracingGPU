@@ -14,6 +14,27 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+typedef struct _Camera
+{
+    cl_float viewport_height;
+    cl_float viewport_width;
+    cl_float focal_length;
+
+    cl_float3 origin;
+} Camera;
+
+typedef struct _Sphere 
+{
+    // coordinates
+    cl_float x;
+    cl_float y;
+    cl_float z;
+
+    // radius
+    cl_float r;
+} 
+Sphere;
+
 //  --------------------------------  //
 //                MAIN                //
 //  --------------------------------  // 
@@ -70,7 +91,8 @@ int main(int argc, char** argv)
     }
     free(program_buffer);
 
-    err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+    const char* build_options = "-I./cl_include";
+    err = clBuildProgram(program, 0, NULL, build_options, NULL, NULL);
     if(err < 0) {
         /* Find size of log and print to std output */
         size_t log_size;
@@ -123,11 +145,32 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
+    Camera test;
+    test.focal_length = 1.0f;
+    test.viewport_width = 2.0f;
+    test.viewport_height = 2.0f;
+    test.origin = {0.0f, 0.0f, 0.0f};
+
+    err = clSetKernelArg(kernel, 1, sizeof(test), &test);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
+    Sphere test_sphere;
+    test_sphere.x = 0.0f;
+    test_sphere.y = 0.0f;
+    test_sphere.z = -1.0f;
+    test_sphere.z = 0.5f;
+
+    err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
 
     size_t global_size[2] = {image_height, image_width};
     err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (err < 0) {
-        ERROR("Can not enqueue kernle");
+        ERROR("Can not enqueue kernle " << err);
     }
     
     size_t pixels_num = 4 * image_width * image_height;
