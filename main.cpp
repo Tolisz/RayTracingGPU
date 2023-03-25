@@ -23,17 +23,20 @@ typedef struct _Camera
     cl_float3 origin;
 } Camera;
 
-typedef struct _Sphere 
+#define NUMBER_OF_SPHERES 2
+#define SAMPLES_PER_PIXEL 100
+
+typedef struct _Spheres_World
 {
     // coordinates
-    cl_float x;
-    cl_float y;
-    cl_float z;
+    cl_float x[NUMBER_OF_SPHERES];
+    cl_float y[NUMBER_OF_SPHERES];
+    cl_float z[NUMBER_OF_SPHERES];
 
     // radius
-    cl_float r;
+    cl_float r[NUMBER_OF_SPHERES];
 } 
-Sphere;
+Spheres_World;
 
 //  --------------------------------  //
 //                MAIN                //
@@ -91,8 +94,9 @@ int main(int argc, char** argv)
     }
     free(program_buffer);
 
-    const char* build_options = "-I./cl_include";
-    err = clBuildProgram(program, 0, NULL, build_options, NULL, NULL);
+    std::string build_options = "-I./cl_include "; 
+    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(NUMBER_OF_SPHERES); 
+    err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
         /* Find size of log and print to std output */
         size_t log_size;
@@ -156,11 +160,16 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    Sphere test_sphere;
-    test_sphere.x = 0.0f;
-    test_sphere.y = 0.0f;
-    test_sphere.z = -1.0f;
-    test_sphere.r = 0.5f;
+    Spheres_World test_sphere;
+    test_sphere.x[0] = 0.0f;
+    test_sphere.y[0] = 0.0f;
+    test_sphere.z[0] = -1.0f;
+    test_sphere.r[0] = 0.5f;
+
+    test_sphere.x[1] = 0.0f;
+    test_sphere.y[1] = -100.5f;
+    test_sphere.z[1] = -1.0f;
+    test_sphere.r[1] = 100.0f;
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {

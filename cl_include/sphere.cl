@@ -1,11 +1,19 @@
-typedef struct _Sphere 
+typedef struct _Spheres_World
 {
     // coordinates
-    float x;
-    float y;
-    float z;
+    float x[NUMBER_OF_SPHERES];
+    float y[NUMBER_OF_SPHERES];
+    float z[NUMBER_OF_SPHERES];
 
     // radius
-    float r;
+    float r[NUMBER_OF_SPHERES];
 } 
+Spheres_World;
+
+typedef struct _Sphere 
+{
+    float3 center;
+    float r;
+}
 Sphere;
+
