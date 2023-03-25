@@ -116,8 +116,8 @@ int main(int argc, char** argv)
 
     /* Image parametrs and OpenCL image object creation */
 
-    size_t image_width = 400;
-    size_t image_height = (400 * 9) / 16;
+    size_t image_width = 1920;
+    size_t image_height = (image_width * 9) / 16;
 
     cl_image_format image_format;
     image_format.image_channel_order = CL_RGBA;
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
     test_sphere.x = 0.0f;
     test_sphere.y = 0.0f;
     test_sphere.z = -1.0f;
-    test_sphere.z = 0.5f;
+    test_sphere.r = 0.5f;
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
@@ -191,6 +191,7 @@ int main(int argc, char** argv)
         exit(1);   
     }
 
+    stbi_flip_vertically_on_write(true);
     stbi_write_png("result.png", image_width, image_height, 4, pixels, image_width * 4 * sizeof(char));
     free(pixels);
 
