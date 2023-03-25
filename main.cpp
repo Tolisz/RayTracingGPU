@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
     /* Image parametrs and OpenCL image object creation */
 
-    size_t image_width = 1920;
+    size_t image_width = 400;
     size_t image_height = (image_width * 9) / 16;
 
     cl_image_format image_format;
@@ -147,8 +147,8 @@ int main(int argc, char** argv)
 
     Camera test;
     test.focal_length = 1.0f;
-    test.viewport_width = 2.0f;
     test.viewport_height = 2.0f;
+    test.viewport_width = (2.0f * 16) / 9;
     test.origin = {0.0f, 0.0f, 0.0f};
 
     err = clSetKernelArg(kernel, 1, sizeof(test), &test);
