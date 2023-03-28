@@ -59,8 +59,9 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
     if (i == 0 && j == 0) {
         printf("INT_MAX %d\n", INT_MAX);
-        for (int i = 0; i < 100; i++)
-            printf("%d\n", MWC64X_NextUint(&rng));
+        printf("FLOAT_MAX %f\n", FLT_MAX);
+        for (int i = 0; i < 10; i++)
+            printf("; random = %f\n", random_float(&rng));
     }
 
     // Color computing
@@ -175,4 +176,9 @@ void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal) 
 /// ------------------ ///
 float random_float(mwc64x_state_t* rng)
 {
+    //int n = MWC64X_NextUint(rng);
+    //printf("num = %d", n);
+    //return (float)MWC64X_NextUint(rng) / 2147483647.0f;
+    //return (float)n / 2147483647;
+    //return (float)n / INT_MAX;
 }
