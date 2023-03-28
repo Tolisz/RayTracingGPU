@@ -3,6 +3,13 @@
 #include "sphere.cl"
 #include "hit_record.cl"
 
+// Rundom number generator
+#include "mwc64x.cl"
+
+// RANDOM
+// ------
+float random_float(mwc64x_state_t* rng);
+
 // RAY 
 // ---
 float3 ray_color(Ray* ray, Spheres_World* spheres_world);
@@ -36,16 +43,6 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
     float u = (float)(j) / (w - 1);
     float v = (float)(i) / (h - 1);
 
-    // if (i == 0 && j == 0)
-    // {
-    //     printf("numb of spheres = %d\n", NUMBER_OF_SPHERES);
-
-    //     for (int k = 0; k < NUMBER_OF_SPHERES; k++)
-    //     {
-    //         printf("k = %d [%f, %f, %f, %f]\n", k, spheres_world.x[k], spheres_world.y[k], spheres_world.z[k], spheres_world.r[k]);
-    //     }
-    // }
-
     // Camera 
     float3 horizontal = (float3)(cam.viewport_width, 0.0f, 0.0f);
     float3 vertical = (float3)(0.0f, cam.viewport_height, 0.0f);
@@ -55,6 +52,16 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
     Ray ray;
     ray.origin = cam.origin;
     ray.direction = lower_left_corner + u * horizontal + v * vertical - cam.origin;
+
+    // Random number generator
+    mwc64x_state_t rng;
+    MWC64X_SeedStreams(&rng, i, j);
+
+    if (i == 0 && j == 0) {
+        printf("INT_MAX %d\n", INT_MAX);
+        for (int i = 0; i < 100; i++)
+            printf("%d\n", MWC64X_NextUint(&rng));
+    }
 
     // Color computing
     float3 color = ray_color(&ray, &spheres_world);
@@ -72,14 +79,6 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
 float3 ray_color(Ray* ray, Spheres_World* spheres_world)
 {
-    // float t = spheres_world_hit(spheres_world, ray); 
-    // if (t > 0.0f)
-    // {
-    //     float3 N = normalize(ray_at(ray, t) - (float3)(sphere->x[0], sphere->y[0], sphere->z[0]));
-    //     return 0.5f * (N + 1.0f);
-    //     //return (float3)(1.0f, 1.0f, 0.5f);
-    // }
-
     Hit_Record rec;
     if (spheres_world_hit(spheres_world, ray, 0.0f, FLT_MAX, &rec)) {
         return 0.5f * (rec.normal + 1.0f);
@@ -169,4 +168,11 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal) {
     rec->front_face = dot(r->direction, outward_normal) < 0;
     rec->normal = rec->front_face ? outward_normal :-outward_normal;
+}
+
+/// ------------------ ///
+///      RANDOM        ///
+/// ------------------ ///
+float random_float(mwc64x_state_t* rng)
+{
 }
