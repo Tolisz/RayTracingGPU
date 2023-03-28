@@ -14,29 +14,44 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define NUMBER_OF_SPHERES 2
+#define SAMPLES_PER_PIXEL 500
+#define MAX_RECURSION_DEPTH 50
+
 typedef struct _Camera
 {
     cl_float3 origin;
     cl_float3 lower_left_corner;
     cl_float3 horizontal;
     cl_float3 vertical;
-} Camera;
-
-#define NUMBER_OF_SPHERES 2
-#define SAMPLES_PER_PIXEL 10000
-#define MAX_RECURSION_DEPTH 150
+} 
+Camera;
 
 typedef struct _Spheres_World
 {
     // coordinates
-    cl_float x[NUMBER_OF_SPHERES];
-    cl_float y[NUMBER_OF_SPHERES];
-    cl_float z[NUMBER_OF_SPHERES];
+    cl_float x[NUMBER_OF_SPHERES] = {0.0f};
+    cl_float y[NUMBER_OF_SPHERES] = {0.0f};
+    cl_float z[NUMBER_OF_SPHERES] = {0.0f};
 
     // radius
-    cl_float r[NUMBER_OF_SPHERES];
+    cl_float r[NUMBER_OF_SPHERES] = {0.0f};
+
+    // materials
+    cl_uint material[NUMBER_OF_SPHERES] = {0};
 } 
 Spheres_World;
+
+
+// Material 
+// 0 - lambertian
+// 1 - metal 
+// 2 - dielectric
+typedef struct _Materials
+{
+    cl_float3 albedo[NUMBER_OF_SPHERES]; // 0 
+} 
+Materials;
 
 //  --------------------------------  //
 //                MAIN                //
@@ -178,13 +193,24 @@ int main(int argc, char** argv)
     test_sphere.y[0] = 0.0f;
     test_sphere.z[0] = -1.0f;
     test_sphere.r[0] = 0.5f;
+    test_sphere.material[0] = 0;
 
     test_sphere.x[1] = 0.0f;
     test_sphere.y[1] = -100.5f;
     test_sphere.z[1] = -1.0f;
     test_sphere.r[1] = 100.0f;
+    test_sphere.material[0] = 0;
+
+    Materials materials;
+    materials.albedo[0] = {0.7f, 0.3f, 0.3f};
+    materials.albedo[0] = {0.8f, 0.8f, 0.8f};
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
+    err = clSetKernelArg(kernel, 3, sizeof(materials), &materials);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }

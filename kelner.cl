@@ -2,6 +2,7 @@
 #include "camera.cl"
 #include "sphere.cl"
 #include "hit_record.cl"
+#include "materials.cl"
 
 // Rundom number generator
 #include "mwc64x.cl"
@@ -55,7 +56,7 @@ float3 reflect(float3 v, float3 n);
 ///            MAIN KELNER             ///
 /// ---------------------------------- ///
 
-__kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World spheres_world)
+__kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World spheres_world, Materials materials)
 {
     int i = get_global_id(0);   // height
     int j = get_global_id(1);   // width

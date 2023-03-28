@@ -7,6 +7,9 @@ typedef struct _Spheres_World
 
     // radius
     float r[NUMBER_OF_SPHERES];
+
+    // material
+    uint material[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
 
