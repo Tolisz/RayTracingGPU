@@ -14,7 +14,7 @@
 
 // RAY 
 // ---
-float3 ray_color(Ray* ray, Spheres_World* spheres_world);
+float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng);
 float3 ray_at(Ray* ray, float t);
 
 // SPHERES WORLD
@@ -43,8 +43,12 @@ Ray camera_get_ray(Camera* cam, float u, float v);
 // ------
 float random_float(mwc64x_state_t* rng);
 float random_float_in(mwc64x_state_t* rng, float min, float max);
+float3 random_float3(mwc64x_state_t* rng);
+float3 random_float3_in(mwc64x_state_t* rng, float min, float max);
+float3 random_in_unit_sphere(mwc64x_state_t* rng);
 
 void write_color(write_only image2d_t image, float3 color);
+float3 reflect(float3 v, float3 n);
 
 
 /// ---------------------------------- ///
@@ -78,7 +82,7 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
     // Random number generator
     mwc64x_state_t rng;
-    MWC64X_SeedStreams(&rng, i, j);
+    MWC64X_SeedStreams(&rng, 0, 0);
 
     // if (i == 0 && j == 0) {
     //     printf("INT_MAX %d\n", INT_MAX);
@@ -96,7 +100,7 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
         // Ray
         Ray ray = camera_get_ray(&cam, u, v);
-        color += ray_color(&ray, &spheres_world);
+        color += ray_color(&ray, &spheres_world, &rng);
     }
 
 
@@ -112,16 +116,37 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 ///     RAY      ///
 /// ------------ ///
 
-float3 ray_color(Ray* ray, Spheres_World* spheres_world)
+float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng)
 {
     Hit_Record rec;
-    if (spheres_world_hit(spheres_world, ray, 0.0f, FLT_MAX, &rec)) {
-        return 0.5f * (rec.normal + 1.0f);
+
+    float end_color = 1.0f;
+    for (int recursion = MAX_RECURSION_DEPTH; recursion >= 0; --recursion)
+    {
+        if (recursion <= 0) {
+            return (float3)(0.0f, 0.0f, 0.0f);
+        }
+
+        if (spheres_world_hit(spheres_world, ray, 0.0f, FLT_MAX, &rec)) {
+            //return 0.5f * (rec.normal + 1.0f);
+
+            float3 rand = random_in_unit_sphere(rng);
+            float3 target = rec.p + rec.normal + rand;
+            //float3 target = reflect(rec.p - ray->direction, rec.normal);
+
+            ray->origin = rec.p;
+            ray->direction = target - rec.p;
+
+            end_color *= 0.5f;
+        }
+        else{
+            break;
+        }
     }
 
     float3 dir = normalize(ray->direction);
     float t = 0.5f*(dir.y + 1.0f);
-    return (1.0f-t)*(float3)(1.0f, 1.0f, 1.0f) + t*(float3)(0.5f, 0.7f, 1.0f);
+    return end_color * ((1.0f-t)*(float3)(1.0f, 1.0f, 1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));
 }
 
 float3 ray_at(Ray* ray, float t)
@@ -221,6 +246,29 @@ float random_float_in(mwc64x_state_t* rng, float min, float max)
     return min + (max - min) * random_float(rng);
 }
 
+float3 random_float3(mwc64x_state_t* rng)
+{
+    return (float3)(random_float(rng), random_float(rng), random_float(rng));
+}
+
+float3 random_float3_in(mwc64x_state_t* rng, float min, float max)
+{
+    return (float3)(random_float_in(rng, min, max), random_float_in(rng, min, max), random_float_in(rng, min, max));
+}
+
+float3 random_in_unit_sphere(mwc64x_state_t* rng)
+{
+    while (true) {
+        float3 p = random_float3_in(rng, -1.0f, 1.0f);
+
+        if (dot(p, p) >= 1) 
+            continue;
+
+        return p;
+    }
+}
+
+// =--=-=-=-=---=-=-=-=-=---==--=-=-=-=-=-==-
 
 void write_color(write_only image2d_t image, float3 color)
 {
@@ -230,7 +278,7 @@ void write_color(write_only image2d_t image, float3 color)
     int2 PixelPos = (int2)(j, i);
 
     float scale = 1.0f / SAMPLES_PER_PIXEL;
-    color *= scale;
+    color = sqrt(scale * color);
 
     uint4 PixelColor = (uint4)(
         clamp(color.x, 0.0f, 0.9999f) * 256,
@@ -239,6 +287,12 @@ void write_color(write_only image2d_t image, float3 color)
 
     write_imageui(image, PixelPos, PixelColor);
 }
+
+float3 reflect(float3 v, float3 n)
+{
+    return v - 2 * dot(v, n)* n;
+}
+
 
 Ray camera_get_ray(Camera* cam, float u, float v)
 {

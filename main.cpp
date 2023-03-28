@@ -24,6 +24,7 @@ typedef struct _Camera
 
 #define NUMBER_OF_SPHERES 2
 #define SAMPLES_PER_PIXEL 100
+#define MAX_RECURSION_DEPTH 50
 
 typedef struct _Spheres_World
 {
@@ -95,7 +96,8 @@ int main(int argc, char** argv)
 
     std::string build_options = "-I./cl_include "; 
     build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(NUMBER_OF_SPHERES); 
-    build_options += " -D SAMPLES_PER_PIXEL=" +std::to_string(SAMPLES_PER_PIXEL);
+    build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
+    build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
         /* Find size of log and print to std output */
