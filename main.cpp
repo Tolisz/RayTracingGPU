@@ -23,8 +23,8 @@ typedef struct _Camera
 } Camera;
 
 #define NUMBER_OF_SPHERES 2
-#define SAMPLES_PER_PIXEL 100
-#define MAX_RECURSION_DEPTH 50
+#define SAMPLES_PER_PIXEL 10000
+#define MAX_RECURSION_DEPTH 150
 
 typedef struct _Spheres_World
 {

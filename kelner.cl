@@ -127,11 +127,11 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng)
             return (float3)(0.0f, 0.0f, 0.0f);
         }
 
-        if (spheres_world_hit(spheres_world, ray, 0.0f, FLT_MAX, &rec)) {
+        if (spheres_world_hit(spheres_world, ray, 0.001f, FLT_MAX, &rec)) {
             //return 0.5f * (rec.normal + 1.0f);
 
             float3 rand = random_in_unit_sphere(rng);
-            float3 target = rec.p + rec.normal + rand;
+            float3 target = rec.p + rec.normal + rand;  
             //float3 target = reflect(rec.p - ray->direction, rec.normal);
 
             ray->origin = rec.p;
