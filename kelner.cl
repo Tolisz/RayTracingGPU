@@ -6,9 +6,11 @@
 // Rundom number generator
 #include "mwc64x.cl"
 
-// RANDOM
-// ------
-float random_float(mwc64x_state_t* rng);
+
+/// ---------------------------------- ///
+///         STRUCT FUNCTIONS           ///
+/// ---------------------------------- ///
+
 
 // RAY 
 // ---
@@ -28,6 +30,23 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 // ----------
 void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal);
 
+// CAMERA
+// ------
+Ray camera_get_ray(Camera* cam, float u, float v);
+
+/// ---------------------------------- ///
+///          HELP FUNCTIONS            ///
+/// ---------------------------------- ///
+
+
+// RANDOM
+// ------
+float random_float(mwc64x_state_t* rng);
+float random_float_in(mwc64x_state_t* rng, float min, float max);
+
+void write_color(write_only image2d_t image, float3 color);
+
+
 /// ---------------------------------- ///
 ///            MAIN KELNER             ///
 /// ---------------------------------- ///
@@ -40,38 +59,53 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
     int h = get_image_height(image);    // height
     int w = get_image_width(image);     // width
 
-    float u = (float)(j) / (w - 1);
-    float v = (float)(i) / (h - 1);
-
     // Camera 
-    float3 horizontal = (float3)(cam.viewport_width, 0.0f, 0.0f);
-    float3 vertical = (float3)(0.0f, cam.viewport_height, 0.0f);
-    float3 lower_left_corner = cam.origin - horizontal / 2 - vertical / 2 - (float3)(0.0f, 0.0f, cam.focal_length);
+    //float3 horizontal = (float3)(cam.viewport_width, 0.0f, 0.0f);
+    //float3 vertical = (float3)(0.0f, cam.viewport_height, 0.0f);
+    //float3 lower_left_corner = cam.origin - horizontal / 2 - vertical / 2 - (float3)(0.0f, 0.0f, cam.focal_length);
 
-    // Ray
-    Ray ray;
-    ray.origin = cam.origin;
-    ray.direction = lower_left_corner + u * horizontal + v * vertical - cam.origin;
+
+
+    // if (i == 0 && j == 0)
+    // {
+    //     printf("o = [%f, %f, %f]\n", cam.origin.x,cam.origin.y,cam.origin.z );
+    //     printf("l = [%f, %f, %f]\n", cam.lower_left_corner.x,cam.lower_left_corner.y,cam.lower_left_corner.z );
+    //     printf("h = [%f, %f, %f]\n", cam.horizontal.x,cam.horizontal.y,cam.horizontal.z );
+    //     printf("v = [%f, %f, %f]\n", cam.vertical.x,cam.vertical.y,cam.vertical.z );
+    // }
+    //ray.origin = cam.origin;
+    //ray.direction = lower_left_corner + u * horizontal + v * vertical - cam.origin;
 
     // Random number generator
     mwc64x_state_t rng;
     MWC64X_SeedStreams(&rng, i, j);
 
-    if (i == 0 && j == 0) {
-        printf("INT_MAX %d\n", INT_MAX);
-        printf("FLOAT_MAX %f\n", FLT_MAX);
-        for (int i = 0; i < 10; i++)
-            printf("; random = %f\n", random_float(&rng));
-    }
+    // if (i == 0 && j == 0) {
+    //     printf("INT_MAX %d\n", INT_MAX);
+    //     printf("FLOAT_MAX %f\n", FLT_MAX);
+    //     for (int i = 0; i < 1000; i++)
+    //         printf("%.14f\n", random_float(&rng));
+    // }
 
     // Color computing
-    float3 color = ray_color(&ray, &spheres_world);
+    float3 color = (float3)(0.0f, 0.0f, 0.0f); //= ray_color(&ray, &spheres_world);
+    // s - sampler
+    for(int s = 0; s < SAMPLES_PER_PIXEL; s++) {
+        float u = (float)(j + random_float(&rng)) / (w - 1);
+        float v = (float)(i + random_float(&rng)) / (h - 1);
+
+        // Ray
+        Ray ray = camera_get_ray(&cam, u, v);
+        color += ray_color(&ray, &spheres_world);
+    }
+
 
     // Set pixel color
-    uint4 PixelColor = (uint4)(color.x * 255, color.y * 255 , color.z * 255, 255);
-    int2 PixelPos = (int2)(j, i);
+    // uint4 PixelColor = (uint4)(color.x * 255, color.y * 255 , color.z * 255, 255);
+    // int2 PixelPos = (int2)(j, i);
     
-    write_imageui(image, PixelPos, PixelColor);
+    // write_imageui(image, PixelPos, PixelColor);
+    write_color(image, color);
 }
 
 /// ------------ ///
@@ -174,11 +208,42 @@ void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal) 
 /// ------------------ ///
 ///      RANDOM        ///
 /// ------------------ ///
+
+// Function generates random float number in [0, 1) 
 float random_float(mwc64x_state_t* rng)
 {
-    //int n = MWC64X_NextUint(rng);
-    //printf("num = %d", n);
-    //return (float)MWC64X_NextUint(rng) / 2147483647.0f;
-    //return (float)n / 2147483647;
-    //return (float)n / INT_MAX;
+    int n = MWC64X_NextUint(rng);
+    return (((float)n / INT_MAX) + 1.0f) / 2.0f;
+}
+
+float random_float_in(mwc64x_state_t* rng, float min, float max)
+{
+    return min + (max - min) * random_float(rng);
+}
+
+
+void write_color(write_only image2d_t image, float3 color)
+{
+    int i = get_global_id(0);   // height
+    int j = get_global_id(1);   // width
+
+    int2 PixelPos = (int2)(j, i);
+
+    float scale = 1.0f / SAMPLES_PER_PIXEL;
+    color *= scale;
+
+    uint4 PixelColor = (uint4)(
+        clamp(color.x, 0.0f, 0.9999f) * 256,
+        clamp(color.y, 0.0f, 0.9999f) * 256,
+        clamp(color.z, 0.0f, 0.9999f) * 256, 256);
+
+    write_imageui(image, PixelPos, PixelColor);
+}
+
+Ray camera_get_ray(Camera* cam, float u, float v)
+{
+    Ray r;
+    r.origin = cam->origin;
+    r.direction = cam->lower_left_corner + u * cam->horizontal + v * cam->vertical - cam->origin;
+    return r;
 }

@@ -1,9 +1,8 @@
 typedef struct _Camera 
 {
-    float viewport_height;
-    float viewport_width;
-    float focal_length;
-
     float3 origin;
+    float3 lower_left_corner;
+    float3 horizontal;
+    float3 vertical;
 } 
 Camera;

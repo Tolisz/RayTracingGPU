@@ -16,11 +16,10 @@
 
 typedef struct _Camera
 {
-    cl_float viewport_height;
-    cl_float viewport_width;
-    cl_float focal_length;
-
     cl_float3 origin;
+    cl_float3 lower_left_corner;
+    cl_float3 horizontal;
+    cl_float3 vertical;
 } Camera;
 
 #define NUMBER_OF_SPHERES 2
@@ -121,8 +120,10 @@ int main(int argc, char** argv)
 
     /* Image parametrs and OpenCL image object creation */
 
+    float aspect_ratio = 9.0f / 16.0f;
+
     size_t image_width = 400;
-    size_t image_height = (image_width * 9) / 16;
+    size_t image_height = image_width * aspect_ratio;
 
     cl_image_format image_format;
     image_format.image_channel_order = CL_RGBA;
@@ -150,13 +151,22 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    Camera test;
-    test.focal_length = 1.0f;
-    test.viewport_height = 2.0f;
-    test.viewport_width = (2.0f * 16) / 9;
-    test.origin = {0.0f, 0.0f, 0.0f};
+    // Camera settings
+    float viewport_height = 2.0f;
+    float viewport_width = (1 / aspect_ratio) * viewport_height;
+    float focal_length = 1.0f;
+    
+    Camera cam;
+    cam.origin = {0.0f, 0.0f, 0.0f};
+    cam.horizontal = {viewport_width, 0.0f, 0.0f};
+    cam.vertical = {0.0f, viewport_height, 0.0f};
+    cam.lower_left_corner = 
+        {cam.origin.x - cam.horizontal.x/2 - cam.vertical.z/2,
+         cam.origin.y - cam.horizontal.y/2 - cam.vertical.y/2,
+         cam.origin.z - cam.horizontal.z/2 - cam.vertical.z/2 - focal_length};
 
-    err = clSetKernelArg(kernel, 1, sizeof(test), &test);
+
+    err = clSetKernelArg(kernel, 1, sizeof(cam), &cam);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
