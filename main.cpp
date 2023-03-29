@@ -193,13 +193,13 @@ int main(int argc, char** argv)
     test_sphere.y[0] = 0.0f;
     test_sphere.z[0] = -1.0f;
     test_sphere.r[0] = 0.5f;
-    test_sphere.material[0] = 1;
+    test_sphere.material[0] = 0;
 
     test_sphere.x[1] = 0.0f;
     test_sphere.y[1] = -100.5f;
     test_sphere.z[1] = -1.0f;
     test_sphere.r[1] = 100.0f;
-    test_sphere.material[1] = 1;
+    test_sphere.material[1] = 0;
 
     Materials materials;
     materials.albedo[0] = {0.7f, 0.3f, 0.3f};

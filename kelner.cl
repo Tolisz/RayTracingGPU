@@ -157,16 +157,20 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Ma
             // }
 
             //printf("%d", rec.material_type);
-            if (rec.material_type == 1)
+            switch (rec.material_type)
             { 
-                if (scatter_lambertian(ray, &rec, &attenuation, &scattered, materials, rng)) {
-                    ray->origin = scattered.origin;
-                    ray->direction = scattered.direction;
-                    end_attenuation *= attenuation;
-                }
-                else  {
-                    return (float3)(0.0f, 0.0f, 0.0f);
-                }
+                // Lambertian
+                case 0:
+                    if (scatter_lambertian(ray, &rec, &attenuation, &scattered, materials, rng)) {
+                        ray->origin = scattered.origin;
+                        ray->direction = scattered.direction;
+                        end_attenuation *= attenuation;
+                    }
+                    else  {
+                        return (float3)(0.0f, 0.0f, 0.0f);
+                    }
+                    
+                    break;
             }
 
             // printf("material_type = %d\n", rec.material_type);
