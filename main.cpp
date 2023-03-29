@@ -14,8 +14,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define NUMBER_OF_SPHERES 2
-#define SAMPLES_PER_PIXEL 100
+#define NUMBER_OF_SPHERES 5
+#define SAMPLES_PER_PIXEL 200  
 #define MAX_RECURSION_DEPTH 50
 
 typedef struct _Camera
@@ -49,7 +49,8 @@ Spheres_World;
 // 2 - dielectric
 typedef struct _Materials
 {
-    cl_float3 albedo[NUMBER_OF_SPHERES]; // 0 
+    cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
+    cl_float fuzz[NUMBER_OF_SPHERES];       // 1
 } 
 Materials;
 
@@ -201,9 +202,23 @@ int main(int argc, char** argv)
     test_sphere.r[1] = 100.0f;
     test_sphere.material[1] = 0;
 
+    test_sphere.x[2] = -1.0f;
+    test_sphere.y[2] = 0.0f;
+    test_sphere.z[2] = -1.0f;
+    test_sphere.r[2] = 0.5f;
+    test_sphere.material[2] = 1;
+
+    test_sphere.x[3] = 1.0f;
+    test_sphere.y[3] = 0.0f;
+    test_sphere.z[3] = -1.0f;
+    test_sphere.r[3] = 0.5f;
+    test_sphere.material[3] = 1;
+
     Materials materials;
     materials.albedo[0] = {0.7f, 0.3f, 0.3f};
     materials.albedo[1] = {0.8f, 0.8f, 0.8f};
+    materials.albedo[2] = {0.8f, 0.8f, 0.8f};
+    materials.albedo[3] = {0.8f, 0.6f, 0.2f};
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {

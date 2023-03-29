@@ -51,6 +51,7 @@ float3 random_in_unit_sphere(mwc64x_state_t* rng);
 // SCATTER 
 // --------
 bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng);
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials);
 
 // COLOR
 // ----- 
@@ -170,6 +171,17 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Ma
                         return (float3)(0.0f, 0.0f, 0.0f);
                     }
                     
+                    break;
+
+                // Metal
+                case 1:
+                    if (scatter_metal(ray, &rec, &attenuation, &scattered, materials)) {
+                        ray->origin = scattered.origin;
+                        ray->direction = scattered.direction;
+                        end_attenuation *= attenuation;
+                    } else {
+                        return (float3)(0.0f, 0.0f, 0.0f);
+                    }
                     break;
             }
 
@@ -334,6 +346,18 @@ bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* sc
     *attenuation = materials->albedo[rec->sphere_id];
 
     return true;
+}
+
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials)
+{
+    float3 reflected = reflect(r_in->direction , rec->normal);
+
+    scattered->origin = rec->p;
+    scattered->direction = reflected;
+
+    *attenuation = materials->albedo[rec->sphere_id];
+
+    return (dot(scattered->direction, rec->normal) > 0);
 }
 
 

@@ -4,6 +4,7 @@
 // 2 - dielectric
 typedef struct _Materials
 {
-    float3 albedo[NUMBER_OF_SPHERES]; // 0 
+    float3 albedo[NUMBER_OF_SPHERES];   // 0, 1 
+    float fuzz[NUMBER_OF_SPHERES];      // 1
 } 
 Materials;
