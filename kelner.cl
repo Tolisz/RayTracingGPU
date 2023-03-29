@@ -51,7 +51,8 @@ float3 random_in_unit_sphere(mwc64x_state_t* rng);
 // SCATTER 
 // --------
 bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng);
-bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials);
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng);
+bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng);
 
 // COLOR
 // ----- 
@@ -61,7 +62,8 @@ void write_color(write_only image2d_t image, float3 color);
 // -------
 float3 reflect(float3 v, float3 n);
 bool near_zero(float3 v);
-
+float3 refract(float3 uv, float3 n, float etai_over_etat);
+float reflectance(float cosine, float ref_dx);
 
 
 /// ---------------------------------- ///
@@ -175,13 +177,24 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Ma
 
                 // Metal
                 case 1:
-                    if (scatter_metal(ray, &rec, &attenuation, &scattered, materials)) {
+                    if (scatter_metal(ray, &rec, &attenuation, &scattered, materials, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
                         end_attenuation *= attenuation;
                     } else {
                         return (float3)(0.0f, 0.0f, 0.0f);
                     }
+                    break;
+
+                case 2:
+                    if (scatter_dielectric(ray, &rec, &attenuation, &scattered, materials, rng)) {
+                        ray->origin = scattered.origin;
+                        ray->direction = scattered.direction;
+                        end_attenuation *= attenuation;
+                    } else {
+                        return (float3)(0.0f, 0.0f, 0.0f);
+                    }
+
                     break;
             }
 
@@ -348,17 +361,43 @@ bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* sc
     return true;
 }
 
-bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials)
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng)
 {
     float3 reflected = reflect(r_in->direction , rec->normal);
 
     scattered->origin = rec->p;
-    scattered->direction = reflected;
+    scattered->direction = reflected + materials->fuzz[rec->sphere_id] * random_in_unit_sphere(rng);
 
     *attenuation = materials->albedo[rec->sphere_id];
 
     return (dot(scattered->direction, rec->normal) > 0);
 }
+
+bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng)
+{
+    *attenuation = (float3)(1.0f, 1.0f, 1.0f);
+    float refraction_ratio = rec->front_face ? (1.0f / materials->ir[rec->sphere_id]) : materials->ir[rec->sphere_id];
+
+    float3 unit_direction = normalize(r_in->direction);
+    float cos_theta = fmin(dot(-unit_direction, rec->normal), 1.0f); 
+    float sin_theta = sqrt(1.0f - cos_theta * cos_theta);
+
+    bool cannot_refract = refraction_ratio * sin_theta > 1.0f;
+    float3 direction;
+
+    if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_float(rng)) {
+        direction = reflect(unit_direction, rec->normal);
+    } else {
+        direction = refract(unit_direction, rec->normal, refraction_ratio);
+    }
+
+    scattered->origin = rec->p;
+    scattered->direction = direction;
+
+    return true;
+}
+
+
 
 
 // =--=-=-=-=---=-=-=-=-=---==--=-=-=-=-=-==-
@@ -384,6 +423,22 @@ void write_color(write_only image2d_t image, float3 color)
 float3 reflect(float3 v, float3 n)
 {
     return v - 2 * dot(v, n)* n;
+}
+
+float3 refract(float3 uv, float3 n, float etai_over_etat)
+{
+    float cos_theta = fmin(dot(-uv, n), 1.0f);
+    float3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    float3 r_out_parallel = -sqrt(fabs(1.0f - dot(r_out_perp, r_out_perp))) * n;
+    
+    return r_out_parallel + r_out_perp;
+}
+
+float reflectance(float cosine, float ref_idx)
+{
+    float r0 = (1 - ref_idx) / (1 + ref_idx);
+    r0 = r0 * r0;
+    return r0 + (1 - r0)*pow((1 - cosine), 5);
 }
 
 bool near_zero(float3 v)

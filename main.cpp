@@ -14,8 +14,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define NUMBER_OF_SPHERES 5
-#define SAMPLES_PER_PIXEL 200  
+#define NUMBER_OF_SPHERES 6
+#define SAMPLES_PER_PIXEL 1000  
 #define MAX_RECURSION_DEPTH 50
 
 typedef struct _Camera
@@ -51,6 +51,7 @@ typedef struct _Materials
 {
     cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
     cl_float fuzz[NUMBER_OF_SPHERES];       // 1
+    cl_float ir[NUMBER_OF_SPHERES];         // 2
 } 
 Materials;
 
@@ -140,7 +141,7 @@ int main(int argc, char** argv)
 
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 400;
+    size_t image_width = 1920;
     size_t image_height = image_width * aspect_ratio;
 
     cl_image_format image_format;
@@ -206,7 +207,7 @@ int main(int argc, char** argv)
     test_sphere.y[2] = 0.0f;
     test_sphere.z[2] = -1.0f;
     test_sphere.r[2] = 0.5f;
-    test_sphere.material[2] = 1;
+    test_sphere.material[2] = 2;
 
     test_sphere.x[3] = 1.0f;
     test_sphere.y[3] = 0.0f;
@@ -214,11 +215,25 @@ int main(int argc, char** argv)
     test_sphere.r[3] = 0.5f;
     test_sphere.material[3] = 1;
 
+    test_sphere.x[4] = -1.0f;
+    test_sphere.y[4] = 0.0f;
+    test_sphere.z[4] = -1.0f;
+    test_sphere.r[4] = -0.4f;
+    test_sphere.material[4] = 2;
+
+
     Materials materials;
     materials.albedo[0] = {0.7f, 0.3f, 0.3f};
     materials.albedo[1] = {0.8f, 0.8f, 0.8f};
+
     materials.albedo[2] = {0.8f, 0.8f, 0.8f};
+    //materials.fuzz[2] = 0.3f;
+    materials.ir[2] = 1.5f;
+
     materials.albedo[3] = {0.8f, 0.6f, 0.2f};
+    materials.fuzz[3] = 0.4f;
+
+    materials.ir[4] = 1.5f;
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
