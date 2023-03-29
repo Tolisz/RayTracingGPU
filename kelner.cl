@@ -15,7 +15,7 @@
 
 // RAY 
 // ---
-float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng);
+float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Materials* materials);
 float3 ray_at(Ray* ray, float t);
 
 // SPHERES WORLD
@@ -48,8 +48,19 @@ float3 random_float3(mwc64x_state_t* rng);
 float3 random_float3_in(mwc64x_state_t* rng, float min, float max);
 float3 random_in_unit_sphere(mwc64x_state_t* rng);
 
+// SCATTER 
+// --------
+bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Materials* materials, mwc64x_state_t* rng);
+
+// COLOR
+// ----- 
 void write_color(write_only image2d_t image, float3 color);
+
+// VECTORS
+// -------
 float3 reflect(float3 v, float3 n);
+bool near_zero(float3 v);
+
 
 
 /// ---------------------------------- ///
@@ -69,8 +80,6 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
     //float3 vertical = (float3)(0.0f, cam.viewport_height, 0.0f);
     //float3 lower_left_corner = cam.origin - horizontal / 2 - vertical / 2 - (float3)(0.0f, 0.0f, cam.focal_length);
 
-
-
     // if (i == 0 && j == 0)
     // {
     //     printf("o = [%f, %f, %f]\n", cam.origin.x,cam.origin.y,cam.origin.z );
@@ -83,7 +92,7 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
     // Random number generator
     mwc64x_state_t rng;
-    MWC64X_SeedStreams(&rng, 0, 0);
+    MWC64X_SeedStreams(&rng, 2 * j * h * w, 2 * i * w * h);
 
     // if (i == 0 && j == 0) {
     //     printf("INT_MAX %d\n", INT_MAX);
@@ -101,7 +110,7 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 
         // Ray
         Ray ray = camera_get_ray(&cam, u, v);
-        color += ray_color(&ray, &spheres_world, &rng);
+        color += ray_color(&ray, &spheres_world, &rng, &materials);
     }
 
 
@@ -117,11 +126,11 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 ///     RAY      ///
 /// ------------ ///
 
-float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng)
+float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Materials* materials)
 {
     Hit_Record rec;
 
-    float end_color = 1.0f;
+    float3 end_attenuation = 1.0f;
     for (int recursion = MAX_RECURSION_DEPTH; recursion >= 0; --recursion)
     {
         if (recursion <= 0) {
@@ -131,14 +140,45 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng)
         if (spheres_world_hit(spheres_world, ray, 0.001f, FLT_MAX, &rec)) {
             //return 0.5f * (rec.normal + 1.0f);
 
-            float3 rand = random_in_unit_sphere(rng);
-            float3 target = rec.p + rec.normal + rand;  
-            //float3 target = reflect(rec.p - ray->direction, rec.normal);
+            float3 attenuation;
+            Ray scattered;
+            // switch (rec.material_type) {
+            //     // Lambertian
+            //     case 0:
+            //         if (scatter_lambertian(ray, &rec, &attenuation, &scattered, materials, rng)) {
+            //             ray->origin = scattered.origin;
+            //             ray->direction = scattered.direction;
+            //             end_attenuation *= 1.0f;
+            //         }
+            //         else  {
+            //             return (float3)(0.0f, 0.0f, 0.0f);
+            //         }
+            //         break;
+            // }
 
-            ray->origin = rec.p;
-            ray->direction = target - rec.p;
+            //printf("%d", rec.material_type);
+            if (rec.material_type == 1)
+            { 
+                if (scatter_lambertian(ray, &rec, &attenuation, &scattered, materials, rng)) {
+                    ray->origin = scattered.origin;
+                    ray->direction = scattered.direction;
+                    end_attenuation *= attenuation;
+                }
+                else  {
+                    return (float3)(0.0f, 0.0f, 0.0f);
+                }
+            }
 
-            end_color *= 0.5f;
+            // printf("material_type = %d\n", rec.material_type);
+
+            // float3 rand = random_in_unit_sphere(rng);
+            // float3 target = rec.p + rec.normal + rand;
+            // // float3 target = reflect(rec.p - ray->direction, rec.normal);
+
+            // ray->origin = rec.p;
+            // ray->direction = target - rec.p;
+
+            // end_attenuation *= 0.5f;
         }
         else{
             break;
@@ -147,7 +187,7 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng)
 
     float3 dir = normalize(ray->direction);
     float t = 0.5f*(dir.y + 1.0f);
-    return end_color * ((1.0f-t)*(float3)(1.0f, 1.0f, 1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));
+    return end_attenuation * ((1.0f-t)*(float3)(1.0f, 1.0f, 1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));
 }
 
 float3 ray_at(Ray* ray, float t)
@@ -171,6 +211,8 @@ bool spheres_world_hit(Spheres_World* spheres_world, Ray* ray, float t_min, floa
         if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
             hit_anithing = true;
             t_nearest = temp_rec.t;
+            temp_rec.sphere_id = i;
+            temp_rec.material_type = sphere.material_type;
             *rec = temp_rec;
         }
     }
@@ -183,6 +225,7 @@ Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i)
     Sphere sphere;
     sphere.center = (float3)(spheres_world->x[i], spheres_world->y[i], spheres_world->z[i]);
     sphere.r = spheres_world->r[i];
+    sphere.material_type = spheres_world->material_type[i];
 
     return sphere;
 }
@@ -269,6 +312,27 @@ float3 random_in_unit_sphere(mwc64x_state_t* rng)
     }
 }
 
+// ---------
+//  SCATTER 
+// ---------
+bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, Materials* materials, mwc64x_state_t* rng)
+{
+    float3 scatter_direction = rec->normal + random_in_unit_sphere(rng);
+    
+    // Catch degenerate scatter direction
+    if (near_zero(scatter_direction)) {
+        scatter_direction = rec->normal;
+    }
+    
+    scattered->origin = rec->p;
+    scattered->direction = scatter_direction;
+
+    *attenuation = materials->albedo[rec->sphere_id];
+
+    return true;
+}
+
+
 // =--=-=-=-=---=-=-=-=-=---==--=-=-=-=-=-==-
 
 void write_color(write_only image2d_t image, float3 color)
@@ -292,6 +356,12 @@ void write_color(write_only image2d_t image, float3 color)
 float3 reflect(float3 v, float3 n)
 {
     return v - 2 * dot(v, n)* n;
+}
+
+bool near_zero(float3 v)
+{
+    const float s = 1e-8;
+    return (fabs(v.x) < s) && (fabs(v.y) < s) && (fabs(v.z) < s);
 }
 
 

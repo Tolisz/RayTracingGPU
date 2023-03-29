@@ -1,4 +1,4 @@
-// Material 
+// Material types value is 
 // 0 - lambertian
 // 1 - metal 
 // 2 - dielectric

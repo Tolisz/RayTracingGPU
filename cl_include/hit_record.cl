@@ -5,5 +5,8 @@ typedef struct _Hit_Record
     
     float t;
     bool front_face;
+
+    int material_type;
+    int sphere_id;
 }
 Hit_Record;

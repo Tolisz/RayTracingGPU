@@ -15,7 +15,7 @@
 #include "stb_image_write.h"
 
 #define NUMBER_OF_SPHERES 2
-#define SAMPLES_PER_PIXEL 500
+#define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 50
 
 typedef struct _Camera
@@ -30,15 +30,15 @@ Camera;
 typedef struct _Spheres_World
 {
     // coordinates
-    cl_float x[NUMBER_OF_SPHERES] = {0.0f};
-    cl_float y[NUMBER_OF_SPHERES] = {0.0f};
-    cl_float z[NUMBER_OF_SPHERES] = {0.0f};
+    cl_float x[NUMBER_OF_SPHERES];
+    cl_float y[NUMBER_OF_SPHERES];
+    cl_float z[NUMBER_OF_SPHERES];
 
     // radius
-    cl_float r[NUMBER_OF_SPHERES] = {0.0f};
+    cl_float r[NUMBER_OF_SPHERES];
 
     // materials
-    cl_uint material[NUMBER_OF_SPHERES] = {0};
+    cl_int material[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
 
@@ -193,17 +193,17 @@ int main(int argc, char** argv)
     test_sphere.y[0] = 0.0f;
     test_sphere.z[0] = -1.0f;
     test_sphere.r[0] = 0.5f;
-    test_sphere.material[0] = 0;
+    test_sphere.material[0] = 1;
 
     test_sphere.x[1] = 0.0f;
     test_sphere.y[1] = -100.5f;
     test_sphere.z[1] = -1.0f;
     test_sphere.r[1] = 100.0f;
-    test_sphere.material[0] = 0;
+    test_sphere.material[1] = 1;
 
     Materials materials;
     materials.albedo[0] = {0.7f, 0.3f, 0.3f};
-    materials.albedo[0] = {0.8f, 0.8f, 0.8f};
+    materials.albedo[1] = {0.8f, 0.8f, 0.8f};
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
