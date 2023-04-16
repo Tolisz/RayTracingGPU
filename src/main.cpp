@@ -19,14 +19,7 @@
 #define SAMPLES_PER_PIXEL 100  
 #define MAX_RECURSION_DEPTH 50
 
-typedef struct _Camera
-{
-    cl_float3 origin;
-    cl_float3 lower_left_corner;
-    cl_float3 horizontal;
-    cl_float3 vertical;
-} 
-Camera;
+#include "camera.hpp"
 
 typedef struct _Spheres_World
 {
@@ -66,29 +59,30 @@ Materials;
 int main(int argc, char** argv)
 {
 
-    //Foo<2, int, float>();
+    // vec::vec2 a;
 
-    vec::vec2 a;
+    // a[0] = 1;
+    // a[1] = 2;
 
-    a[0] = 1;
-    a[1] = 2;
+    // vec::vec2 b(a);
 
-    vec::vec2 b(a);
+    // vec::vec3 c(3.5, 4, 5);
+    // vec::vec3 k(5, 3, 4.7);
 
-    vec::vec3 c(3, 4, 5);
+    // vec::vec3 d = vec::cross(c, k);
 
-    std::cout << c[0] << "\n";
-    std::cout << c[1] << "\n";
-    std::cout << c[2] << "\n";
+    // std::cout << d[0] << "\n";
+    // std::cout << d[1] << "\n";
+    // std::cout << d[2] << "\n";
 
-    auto d = 4.0f - a;
+    // //d = 4.0f - a;
+    // //
+    // //std::cout << d[0] << "\n";
+    // //std::cout << d[1] << "\n";
 
-    std::cout << d[0] << "\n";
-    std::cout << d[1] << "\n";
+    // std::cout << "Length d = " << d.length() << "\n";
 
-    std::cout << "Length d = " << d.length() << "\n";
-
-    return 0;
+    // return 0;
 
     cl_int err;
 
@@ -169,10 +163,6 @@ int main(int argc, char** argv)
     /* Image parametrs and OpenCL image object creation */
 
     // Camera class parametrs
-    cl_float3 lookfrom;
-    cl_float3 lookat;
-    cl_float3 vup;
-    float vfov = 95; // vertical_field_of_view
     float aspect_ratio = 9.0f / 16.0f;
 
     size_t image_width = 400;
@@ -205,25 +195,14 @@ int main(int argc, char** argv)
     }
 
     // Camera settings
-
-    float theta = vfov * M_PI / 180.0f;
-    float h = std::tan(theta / 2);
-
-    float viewport_height = 2.0f * h;
-    float viewport_width = (1 / aspect_ratio) * viewport_height;
-    float focal_length = 1.0f;
     
-    Camera cam;
-    cam.origin = {0.0f, 0.0f, 0.0f};
-    cam.horizontal = {viewport_width, 0.0f, 0.0f};
-    cam.vertical = {0.0f, viewport_height, 0.0f};
-    cam.lower_left_corner = 
-        {cam.origin.x - cam.horizontal.x/2 - cam.vertical.z/2,
-         cam.origin.y - cam.horizontal.y/2 - cam.vertical.y/2,
-         cam.origin.z - cam.horizontal.z/2 - cam.vertical.z/2 - focal_length};
 
+    Camera cam(vec::vec3(-2,2,1), vec::vec3(0,0,-1), vec::vec3(0,1,0), 90, aspect_ratio);
 
-    err = clSetKernelArg(kernel, 1, sizeof(cam), &cam);
+    CL_Camera camcl;
+    cam.get_cl_structure(&camcl);
+
+    err = clSetKernelArg(kernel, 1, sizeof(camcl), &camcl);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }

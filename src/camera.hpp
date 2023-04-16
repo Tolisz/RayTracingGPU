@@ -1,6 +1,8 @@
 #pragma once 
 
 #include "vec/vec.hpp"
+#include "cl_structs/camera.h"
+#include "error.h"
 
 class Camera {
 public:
@@ -10,10 +12,10 @@ public:
         vec::vec3 lookat,
         vec::vec3 vup,
         double vfov, // vertical field-of-view in degrees
-        double aspect_ration
-    ) {
-        double theta = degree_to_radians(vfov);
-    }
+        double aspect_ratio
+    );
+
+    void get_cl_structure(CL_Camera* pointer);
 
 private: 
 

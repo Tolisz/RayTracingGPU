@@ -1,5 +1,4 @@
 
-
 typedef struct _Camera 
 {
     float3 origin;
