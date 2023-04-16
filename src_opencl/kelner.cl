@@ -33,7 +33,7 @@ void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal);
 
 // CAMERA
 // ------
-Ray camera_get_ray(Camera* cam, float u, float v);
+Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v);
 
 /// ---------------------------------- ///
 ///          HELP FUNCTIONS            ///
@@ -47,6 +47,7 @@ float random_float_in(mwc64x_state_t* rng, float min, float max);
 float3 random_float3(mwc64x_state_t* rng);
 float3 random_float3_in(mwc64x_state_t* rng, float min, float max);
 float3 random_in_unit_sphere(mwc64x_state_t* rng);
+float3 random_in_unit_disk(mwc64x_state_t* rng);
 
 // SCATTER 
 // --------
@@ -112,7 +113,7 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
         float v = (float)(i + random_float(&rng)) / (h - 1);
 
         // Ray
-        Ray ray = camera_get_ray(&cam, u, v);
+        Ray ray = camera_get_ray(&cam, &rng, u, v);
         color += ray_color(&ray, &spheres_world, &rng, &materials);
     }
 
@@ -342,6 +343,14 @@ float3 random_in_unit_sphere(mwc64x_state_t* rng)
     }
 }
 
+float3 random_in_unit_disk(mwc64x_state_t* rng) {
+    while (true) {
+        float3 p = (float3)(random_float_in(rng, -1, 1), random_float_in(rng, -1, 1), 0.0f);
+        if (dot(p, p) >= 1) continue;
+        return p;
+    }
+}
+
 // ---------
 //  SCATTER 
 // ---------
@@ -448,11 +457,14 @@ bool near_zero(float3 v)
     return (fabs(v.x) < s) && (fabs(v.y) < s) && (fabs(v.z) < s);
 }
 
-
-Ray camera_get_ray(Camera* cam, float u, float v)
+Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v)
 {
+    float3 rd = cam->lens_radius * random_in_unit_disk(rng);
+    float3 offset = cam->u * rd.x + cam->v * rd.y;
+
     Ray r;
-    r.origin = cam->origin;
-    r.direction = cam->lower_left_corner + u * cam->horizontal + v * cam->vertical - cam->origin;
+    r.origin = cam->origin + offset;
+    r.direction = cam->lower_left_corner + u * cam->horizontal + v * cam->vertical - cam->origin - offset;
     return r;
 }
+

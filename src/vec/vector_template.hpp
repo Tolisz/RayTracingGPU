@@ -8,7 +8,7 @@ namespace vec {
     template<int N, typename T> 
     class vector_template
     {
-    public:
+    private:
         // ------------------------------
         //            Data
         // ------------------------------

@@ -16,7 +16,7 @@
 #include "stb_image_write.h"
 
 #define NUMBER_OF_SPHERES 6
-#define SAMPLES_PER_PIXEL 100  
+#define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 50
 
 #include "camera.hpp"
@@ -197,7 +197,13 @@ int main(int argc, char** argv)
     // Camera settings
     
 
-    Camera cam(vec::vec3(-2,2,1), vec::vec3(0,0,-1), vec::vec3(0,1,0), 90, aspect_ratio);
+    vec::vec3 lookfrom(3,3,2);
+    vec::vec3 lookat(0,0,-1);
+    vec::vec3 vup(0,1,0);
+    auto dist_to_focus = (lookfrom-lookat).length();
+    auto aperture = 0.1;
+
+    Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus);
 
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
