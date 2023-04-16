@@ -7,6 +7,7 @@
 #endif
 
 #include <iostream>
+#include <cmath>
 
 #include "error.h"
 #include "utility_functions.h"
@@ -15,7 +16,7 @@
 #include "stb_image_write.h"
 
 #define NUMBER_OF_SPHERES 6
-#define SAMPLES_PER_PIXEL 1000  
+#define SAMPLES_PER_PIXEL 100  
 #define MAX_RECURSION_DEPTH 50
 
 typedef struct _Camera
@@ -95,7 +96,7 @@ int main(int argc, char** argv)
 
     /* OpenCL program and kelner*/
 
-    std::string program_file = "kelner.cl";
+    std::string program_file = "src_opencl/kelner.cl";
     std::string kelner_name = "ray_tracer";
 
     size_t program_size;
@@ -111,7 +112,7 @@ int main(int argc, char** argv)
     }
     free(program_buffer);
 
-    std::string build_options = "-I./cl_include "; 
+    std::string build_options = "-I./src_opencl "; 
     build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(NUMBER_OF_SPHERES); 
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
@@ -139,9 +140,14 @@ int main(int argc, char** argv)
 
     /* Image parametrs and OpenCL image object creation */
 
+    // Camera class parametrs
+    cl_float3 lookfrom;
+    cl_float3 lookat;
+    cl_float3 vup;
+    float vfov = 95; // vertical_field_of_view
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 1920;
+    size_t image_width = 400;
     size_t image_height = image_width * aspect_ratio;
 
     cl_image_format image_format;
@@ -171,7 +177,11 @@ int main(int argc, char** argv)
     }
 
     // Camera settings
-    float viewport_height = 2.0f;
+
+    float theta = vfov * M_PI / 180.0f;
+    float h = std::tan(theta / 2);
+
+    float viewport_height = 2.0f * h;
     float viewport_width = (1 / aspect_ratio) * viewport_height;
     float focal_length = 1.0f;
     

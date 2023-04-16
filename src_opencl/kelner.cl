@@ -186,6 +186,7 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Ma
                     }
                     break;
 
+                // 
                 case 2:
                     if (scatter_dielectric(ray, &rec, &attenuation, &scattered, materials, rng)) {
                         ray->origin = scattered.origin;
