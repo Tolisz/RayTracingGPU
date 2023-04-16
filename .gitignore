@@ -1,5 +1,12 @@
-main.o
-prog
-.vscode
+# folders
+
+build/
+.vscode/
+
+# executables
+
+rtgpu
+
+# files
+
 result.png
-build
