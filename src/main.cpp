@@ -56,12 +56,40 @@ typedef struct _Materials
 } 
 Materials;
 
+
+#include "vec/vec.hpp"
+
 //  --------------------------------  //
 //                MAIN                //
 //  --------------------------------  // 
 
 int main(int argc, char** argv)
 {
+
+    //Foo<2, int, float>();
+
+    vec::vec2 a;
+
+    a[0] = 1;
+    a[1] = 2;
+
+    vec::vec2 b(a);
+
+    vec::vec3 c(3, 4, 5);
+
+    std::cout << c[0] << "\n";
+    std::cout << c[1] << "\n";
+    std::cout << c[2] << "\n";
+
+    auto d = 4.0f - a;
+
+    std::cout << d[0] << "\n";
+    std::cout << d[1] << "\n";
+
+    std::cout << "Length d = " << d.length() << "\n";
+
+    return 0;
+
     cl_int err;
 
     /* OpenCL platform */
