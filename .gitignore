@@ -5,7 +5,8 @@ build/
 
 # executables
 
-rtgpu
+# If file name is `rtgpu` git doesn't ignore it xD
+rt_gpu 
 
 # files
 
