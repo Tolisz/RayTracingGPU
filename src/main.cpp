@@ -19,6 +19,7 @@
 #define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 50
 
+#include "clwrapper.hpp"
 #include "camera.hpp"
 
 typedef struct _Spheres_World
@@ -49,7 +50,6 @@ typedef struct _Materials
 } 
 Materials;
 
-
 #include "vec/vec.hpp"
 
 //  --------------------------------  //
@@ -58,63 +58,9 @@ Materials;
 
 int main(int argc, char** argv)
 {
-
-    // vec::vec2 a;
-
-    // a[0] = 1;
-    // a[1] = 2;
-
-    // vec::vec2 b(a);
-
-    // vec::vec3 c(3.5, 4, 5);
-    // vec::vec3 k(5, 3, 4.7);
-
-    // vec::vec3 d = vec::cross(c, k);
-
-    // std::cout << d[0] << "\n";
-    // std::cout << d[1] << "\n";
-    // std::cout << d[2] << "\n";
-
-    // //d = 4.0f - a;
-    // //
-    // //std::cout << d[0] << "\n";
-    // //std::cout << d[1] << "\n";
-
-    // std::cout << "Length d = " << d.length() << "\n";
-
-    // return 0;
+    CL::CLwrapper cl_wrapper;
 
     cl_int err;
-
-    /* OpenCL platform */
-
-    cl_platform_id platform;
-    err = clGetPlatformIDs(1, &platform, NULL);
-    if (err < 0) {
-        ERROR("Any platform has not been detected, do you have any OpenCL SDK installed? err = " << err);
-    }
-
-    /* OpenCL device */
-    
-    cl_device_id device;
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    if (err < 0) {
-        ERROR("Any device related to previously found platform has not been detected; err = " << err);
-    }
-
-    /* OpenCL Context */
-    
-    cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-    if (err < 0) {
-        ERROR("Context can not be created: err = " << err);
-    }
-
-    /* OpenCL comand queue */
-
-    cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, NULL, &err);
-    if(err < 0) {
-        ERROR("Comand queue can not be created: err = " << err);
-    }
 
     /* OpenCL program and kelner*/
 
@@ -128,7 +74,7 @@ int main(int argc, char** argv)
     }
 
     cl_program program;
-    program = clCreateProgramWithSource(context, 1, (const char**)&program_buffer, &program_size, &err);
+    program = clCreateProgramWithSource(cl_wrapper.context, 1, (const char**)&program_buffer, &program_size, &err);
     if(err < 0) {
         ERROR("Can not create a program from the source file");
     }
@@ -144,10 +90,10 @@ int main(int argc, char** argv)
         size_t log_size;
         char* program_log;
 
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG,  0, NULL, &log_size);
+        clGetProgramBuildInfo(program, cl_wrapper.device, CL_PROGRAM_BUILD_LOG,  0, NULL, &log_size);
         program_log = (char*) malloc(log_size + 1);
         program_log[log_size] = '\0';
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
+        clGetProgramBuildInfo(program, cl_wrapper.device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
         printf("%s\n", program_log);
         free(program_log);
         exit(1);
@@ -184,7 +130,7 @@ int main(int argc, char** argv)
     image_desc.num_samples = 0;
     image_desc.mem_object = NULL;
 
-    cl_mem cl_image = clCreateImage(context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
+    cl_mem cl_image = clCreateImage(cl_wrapper.context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
     if (err < 0) {
         ERROR("Can not create image object " << err);
     }
@@ -269,7 +215,7 @@ int main(int argc, char** argv)
     }
 
     size_t global_size[2] = {image_height, image_width};
-    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(cl_wrapper.queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (err < 0) {
         ERROR("Can not enqueue kernle " << err);
     }
@@ -286,7 +232,7 @@ int main(int argc, char** argv)
     region[1] = image_height; 
     region[2] = 1;
 
-    err = clEnqueueReadImage(queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
+    err = clEnqueueReadImage(cl_wrapper.queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
     if(err < 0) {
         perror("Couldn't read from the image object");
         exit(1);   
@@ -298,12 +244,8 @@ int main(int argc, char** argv)
 
     /* Cleaning */
 
-    
     clReleaseKernel(kernel);
     clReleaseProgram(program);
-    clReleaseCommandQueue(queue);
-    clReleaseContext(context);
-    clReleaseDevice(device);
 
     return 0;
 }

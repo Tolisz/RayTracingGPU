@@ -1,6 +1,7 @@
 add_executable(rt_gpu 
     main.cpp
     camera.cpp
+    clwrapper.cpp
 )
 
 target_link_libraries(rt_gpu OpenCL)

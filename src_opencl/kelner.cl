@@ -5,7 +5,8 @@
 #include "materials.cl"
 
 // Rundom number generator
-#include "mwc64x.cl"
+//#include "mwc64x.cl"
+#include "random.cl"
 
 
 /// ---------------------------------- ///
@@ -39,15 +40,6 @@ Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v);
 ///          HELP FUNCTIONS            ///
 /// ---------------------------------- ///
 
-
-// RANDOM
-// ------
-float random_float(mwc64x_state_t* rng);
-float random_float_in(mwc64x_state_t* rng, float min, float max);
-float3 random_float3(mwc64x_state_t* rng);
-float3 random_float3_in(mwc64x_state_t* rng, float min, float max);
-float3 random_in_unit_sphere(mwc64x_state_t* rng);
-float3 random_in_unit_disk(mwc64x_state_t* rng);
 
 // SCATTER 
 // --------
@@ -303,52 +295,6 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal) {
     rec->front_face = dot(r->direction, outward_normal) < 0;
     rec->normal = rec->front_face ? outward_normal :-outward_normal;
-}
-
-/// ------------------ ///
-///      RANDOM        ///
-/// ------------------ ///
-
-// Function generates random float number in [0, 1) 
-float random_float(mwc64x_state_t* rng)
-{
-    int n = MWC64X_NextUint(rng);
-    return (((float)n / INT_MAX) + 1.0f) / 2.0f;
-}
-
-float random_float_in(mwc64x_state_t* rng, float min, float max)
-{
-    return min + (max - min) * random_float(rng);
-}
-
-float3 random_float3(mwc64x_state_t* rng)
-{
-    return (float3)(random_float(rng), random_float(rng), random_float(rng));
-}
-
-float3 random_float3_in(mwc64x_state_t* rng, float min, float max)
-{
-    return (float3)(random_float_in(rng, min, max), random_float_in(rng, min, max), random_float_in(rng, min, max));
-}
-
-float3 random_in_unit_sphere(mwc64x_state_t* rng)
-{
-    while (true) {
-        float3 p = random_float3_in(rng, -1.0f, 1.0f);
-
-        if (dot(p, p) >= 1) 
-            continue;
-
-        return p;
-    }
-}
-
-float3 random_in_unit_disk(mwc64x_state_t* rng) {
-    while (true) {
-        float3 p = (float3)(random_float_in(rng, -1, 1), random_float_in(rng, -1, 1), 0.0f);
-        if (dot(p, p) >= 1) continue;
-        return p;
-    }
 }
 
 // ---------

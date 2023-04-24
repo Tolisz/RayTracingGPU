@@ -1,3 +1,5 @@
+#ifndef CL_CAMERA
+#define CL_CAMERA
 
 typedef struct _Camera 
 {
@@ -9,3 +11,5 @@ typedef struct _Camera
     float lens_radius;
 } 
 Camera;
+
+#endif // CL_CAMERA
