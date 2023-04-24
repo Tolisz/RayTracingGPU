@@ -209,6 +209,8 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
+    std::cout << "sizeof(materials) = " << sizeof(materials) << std::endl;
+
     err = clSetKernelArg(kernel, 3, sizeof(materials), &materials);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);

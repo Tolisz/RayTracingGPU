@@ -88,7 +88,10 @@ float3 random_in_unit_sphere(mwc64x_state_t* rng)
 float3 random_in_unit_disk(mwc64x_state_t* rng) {
     while (true) {
         float3 p = (float3)(random_float_in(rng, -1, 1), random_float_in(rng, -1, 1), 0.0f);
-        if (dot(p, p) >= 1) continue;
+
+        if (dot(p, p) >= 1)
+            continue;
+        
         return p;
     }
 }

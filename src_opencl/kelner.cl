@@ -5,7 +5,6 @@
 #include "materials.cl"
 
 // Rundom number generator
-//#include "mwc64x.cl"
 #include "random.cl"
 
 
@@ -17,7 +16,6 @@
 // RAY 
 // ---
 float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Materials* materials);
-float3 ray_at(Ray* ray, float t);
 
 // SPHERES WORLD
 // ------------- 
@@ -32,9 +30,6 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 // ----------
 void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal);
 
-// CAMERA
-// ------
-Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v);
 
 /// ---------------------------------- ///
 ///          HELP FUNCTIONS            ///
@@ -211,11 +206,6 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng, Ma
     float3 dir = normalize(ray->direction);
     float t = 0.5f*(dir.y + 1.0f);
     return end_attenuation * ((1.0f-t)*(float3)(1.0f, 1.0f, 1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));
-}
-
-float3 ray_at(Ray* ray, float t)
-{
-    return ray->origin + t * ray->direction;
 }
 
 /// -------------------- ///
@@ -402,15 +392,3 @@ bool near_zero(float3 v)
     const float s = 1e-8;
     return (fabs(v.x) < s) && (fabs(v.y) < s) && (fabs(v.z) < s);
 }
-
-Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v)
-{
-    float3 rd = cam->lens_radius * random_in_unit_disk(rng);
-    float3 offset = cam->u * rd.x + cam->v * rd.y;
-
-    Ray r;
-    r.origin = cam->origin + offset;
-    r.direction = cam->lower_left_corner + u * cam->horizontal + v * cam->vertical - cam->origin - offset;
-    return r;
-}
-
