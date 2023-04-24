@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <cstdlib>
 
 #include "error.h"
 #include "utility_functions.h"
@@ -191,27 +192,93 @@ int main(int argc, char** argv)
     test_sphere.material[4] = 2;
 
 
-    Materials materials;
-    materials.albedo[0] = {0.7f, 0.3f, 0.3f};
-    materials.albedo[1] = {0.8f, 0.8f, 0.8f};
+    // Materials materials;
+    // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
+    // materials.albedo[1] = {0.8f, 0.8f, 0.8f};
 
-    materials.albedo[2] = {0.8f, 0.8f, 0.8f};
-    //materials.fuzz[2] = 0.3f;
-    materials.ir[2] = 1.5f;
+    // materials.albedo[2] = {0.8f, 0.8f, 0.8f};
+    // //materials.fuzz[2] = 0.3f;
+    // materials.ir[2] = 1.5f;
 
-    materials.albedo[3] = {0.8f, 0.6f, 0.2f};
-    materials.fuzz[3] = 0.4f;
+    // materials.albedo[3] = {0.8f, 0.6f, 0.2f};
+    // materials.fuzz[3] = 0.4f;
 
-    materials.ir[4] = 1.5f;
+    // materials.ir[4] = 1.5f;
+
+    size_t test_materials_size = NUMBER_OF_SPHERES * (sizeof(cl_float3) + 2 * sizeof(cl_float));
+    std::cout << "test_size = " << test_materials_size << "\n";
+    void* test_materials = std::calloc(sizeof(char), test_materials_size);
+    if (!test_materials) {
+        std::cout << "Dupa XD" << std::endl;
+    }
+
+    // *((float*)test_materials + 1) = 1.5f;
+    // *((float*)test_materials + 0) = 2.5f;
+
+    // std::cout << "float = " << *((float*)test_materials + 1) << "\n";
+
+    // for(int i = 0; i < test_materials_size / 4; i++) {
+    //     std::cout << "i=" << i << " " << *((float*)test_materials + i) << "\n";
+    // }
+
+    // std::cout << "albedo: \n";
+
+    // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
+        *((float*)test_materials + 0*4 + 0) = 0.7f;
+        *((float*)test_materials + 0*4 + 1) = 0.3f;
+        *((float*)test_materials + 0*4 + 2) = 0.3f;
+        *((float*)test_materials + 0*4 + 3) = 0.0f;
+    // materials.albedo[1] = {0.8f, 0.8f, 0.8f};
+        *((float*)test_materials + 1*4 + 0) = 0.8f;
+        *((float*)test_materials + 1*4 + 1) = 0.8f;
+        *((float*)test_materials + 1*4 + 2) = 0.8f;
+        *((float*)test_materials + 1*4 + 3) = 0.0f;
+    // materials.albedo[2] = {0.8f, 0.8f, 0.8f};
+        *((float*)test_materials + 2*4 + 0) = 0.8f;
+        *((float*)test_materials + 2*4 + 1) = 0.8f;
+        *((float*)test_materials + 2*4 + 2) = 0.8f;
+        *((float*)test_materials + 2*4 + 3) = 0.0f;
+    // //materials.fuzz[2] = 0.3f;
+    // materials.ir[2] = 1.5f;
+        *((float*)test_materials + 30 + 2) = 1.5f;
+    // materials.albedo[3] = {0.8f, 0.6f, 0.2f};
+        *((float*)test_materials + 3*4 + 0) = 0.8f;
+        *((float*)test_materials + 3*4 + 1) = 0.6f;
+        *((float*)test_materials + 3*4 + 2) = 0.2f;
+        *((float*)test_materials + 3*4 + 3) = 0.0f;
+    // materials.fuzz[3] = 0.4f;
+        *((float*)test_materials + 24 + 3) = 0.4f;
+    // materials.ir[4] = 1.5f;
+        *((float*)test_materials + 30 + 4) = 1.5f;
+
+
+
+    for(int i = 0; i < NUMBER_OF_SPHERES; i++) {
+        for (int j = 0; j < 4; j++) {
+            std::cout << *((float*)test_materials + i*4 + j) << " | "; 
+        }
+        std::cout << '\n';
+    }
+
+    std::cout << "fuzz: \n";
+    for (int i = 0; i < NUMBER_OF_SPHERES; i++) {
+        std::cout << *((float*)test_materials + i + 24) << '\n'; 
+    }
+
+    std::cout << "ir: \n";
+    for (int i = 0; i < NUMBER_OF_SPHERES; i++) {
+        std::cout << *((float*)test_materials + i + 30) << '\n'; 
+    }
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    std::cout << "sizeof(materials) = " << sizeof(materials) << std::endl;
+    //std::cout << "sizeof(materials) = " << sizeof(materials) << std::endl;
+    //std::cout << "sizof(SphereWorld) = " << sizeof(test_sphere) << std::endl;
 
-    err = clSetKernelArg(kernel, 3, sizeof(materials), &materials);
+    err = clSetKernelArg(kernel, 3, test_materials_size, test_materials);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
