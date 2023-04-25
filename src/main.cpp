@@ -250,109 +250,21 @@ int main(int argc, char** argv)
 
     void* ptr_albedo = nullptr;
     size_t ptr_albedo_size;
-    size_t ptr_table_size;
-    Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, &ptr_table_size);
-
-    if (!ptr_albedo) {
-        std::cout << "Dupa" << std::endl;
-    }
-
-    std::cout << "size1 = " << ptr_albedo_size << std::endl;
-    std::cout << "size2 = " << sizeof(Material_Albedo) << std::endl;
-
-    std::cout << "albd1.id = " << albedo1->get_material_id() << std::endl;
-    std::cout << "albd2.id = " << albedo2->get_material_id() << std::endl;
-    std::cout << "albd1.num = " << albedo1->get_material_num() << std::endl;
-    std::cout << "albd2.num = " << albedo2->get_material_num() << std::endl;
-
-    for(int i = 0; i < 2; i++) {
-        for (int j = 0; j < 4; j++) {
-            std::cout << *((float*)ptr_albedo + i*4 + j) << " | "; 
-        }
-        std::cout << '\n';
-    }
-
-    /*
-
-    size_t test_materials_size = NUMBER_OF_SPHERES * (sizeof(cl_float3) + 2 * sizeof(cl_float));
-    std::cout << "test_size = " << test_materials_size << "\n";
-    void* test_materials = std::calloc(sizeof(char), test_materials_size);
-    if (!test_materials) {
-        std::cout << "Dupa XD" << std::endl;
-    }
-
-    // *((float*)test_materials + 1) = 1.5f;
-    // *((float*)test_materials + 0) = 2.5f;
-
-    // std::cout << "float = " << *((float*)test_materials + 1) << "\n";
-
-    // for(int i = 0; i < test_materials_size / 4; i++) {
-    //     std::cout << "i=" << i << " " << *((float*)test_materials + i) << "\n";
-    // }
+    Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, nullptr);
 
 
-    // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
-        *((float*)test_materials + 0*4 + 0) = 0.7f;
-        *((float*)test_materials + 0*4 + 1) = 0.3f;
-        *((float*)test_materials + 0*4 + 2) = 0.3f;
-        *((float*)test_materials + 0*4 + 3) = 0.0f;
-    // materials.albedo[1] = {0.8f, 0.8f, 0.8f};
-        *((float*)test_materials + 1*4 + 0) = 0.8f;
-        *((float*)test_materials + 1*4 + 1) = 0.8f;
-        *((float*)test_materials + 1*4 + 2) = 0.8f;
-        *((float*)test_materials + 1*4 + 3) = 0.0f;
-    // materials.albedo[2] = {0.8f, 0.8f, 0.8f};
-        *((float*)test_materials + 2*4 + 0) = 0.8f;
-        *((float*)test_materials + 2*4 + 1) = 0.8f;
-        *((float*)test_materials + 2*4 + 2) = 0.8f;
-        *((float*)test_materials + 2*4 + 3) = 0.0f;
-    // //materials.fuzz[2] = 0.3f;
-    // materials.ir[2] = 1.5f;
-        *((float*)test_materials + 30 + 2) = 1.5f;
-    // materials.albedo[3] = {0.8f, 0.6f, 0.2f};
-        *((float*)test_materials + 3*4 + 0) = 0.8f;
-        *((float*)test_materials + 3*4 + 1) = 0.6f;
-        *((float*)test_materials + 3*4 + 2) = 0.2f;
-        *((float*)test_materials + 3*4 + 3) = 0.0f;
-    // materials.fuzz[3] = 0.4f;
-        *((float*)test_materials + 24 + 3) = 0.4f;
-    // materials.ir[4] = 1.5f;
-        *((float*)test_materials + 30 + 4) = 1.5f;
+    auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
 
-    std::cout << "albedo: \n";
+    void* ptr_metal = nullptr;
+    size_t ptr_metal_size;
+    Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, nullptr);
 
-    for(int i = 0; i < NUMBER_OF_SPHERES; i++) {
-        for (int j = 0; j < 4; j++) {
-            std::cout << *((float*)test_materials + i*4 + j) << " | "; 
-        }
-        std::cout << '\n';
-    }
-
-    std::cout << "fuzz: \n";
-    for (int i = 0; i < NUMBER_OF_SPHERES; i++) {
-        std::cout << *((float*)test_materials + i + 24) << '\n'; 
-    }
-
-    std::cout << "ir: \n";
-    for (int i = 0; i < NUMBER_OF_SPHERES; i++) {
-        std::cout << *((float*)test_materials + i + 30) << '\n'; 
-    }
-
-
-    */
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    //std::cout << "sizeof(materials) = " << sizeof(materials) << std::endl;
-    //std::cout << "sizof(SphereWorld) = " << sizeof(test_sphere) << std::endl; 
-
-    // err = clSetKernelArg(kernel, 3, sizeof(Materials), &materials);
-    // if (err < 0) {
-    //     ERROR("Can not set Kernel Argument " << err);
-    // }
 
     // err = clSetKernelArg(kernel, 3, sizeof(Material_Albedo), &mat_albedo);
     // if (err < 0) {
@@ -364,7 +276,12 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    err = clSetKernelArg(kernel, 4, sizeof(Material_Fuzz), &mat_fuzz);
+    // err = clSetKernelArg(kernel, 4, sizeof(Material_Fuzz), &mat_fuzz);
+    // if (err < 0) {
+    //     ERROR("Can not set Kernel Argument " << err);
+    // }
+
+    err = clSetKernelArg(kernel, 4, ptr_metal_size, ptr_metal);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -406,6 +323,9 @@ int main(int argc, char** argv)
 
     clReleaseKernel(kernel);
     clReleaseProgram(program);
+
+    std::free(ptr_albedo);
+    std::free(ptr_metal);
 
     return 0;
 }
