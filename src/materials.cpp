@@ -119,3 +119,46 @@ bool Metal_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_si
 // Dielektryk
 // ----------
 
+size_t Dielectric::count = 0;
+
+Dielectric::Dielectric(const float& index_of_reflection)
+    : reflection_index{index_of_reflection}, mat_num{count++}
+{
+    Dielectric_List::dielec_list.push_back(this);
+}
+
+std::list<Dielectric*> Dielectric_List::dielec_list;
+
+bool Dielectric_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size) noexcept
+{
+    // -------------------------------------------
+    //               OpenCL struct
+    // -------------------------------------------
+    // 
+    //        typedef struct _Material_Reflectance
+    //        {
+    //            cl_float reflection_index[table_size];
+    //        }
+    //        Material_Reflectance;
+    // 
+    // -------------------------------------------
+
+
+    if(table_size)
+        *table_size = dielec_list.size();
+
+    *ptr_size = dielec_list.size() * sizeof(cl_float);
+
+    *ptr = std::calloc(*ptr_size, sizeof(char));
+    if (!ptr) {
+        WARNING("Can not allocate memory for OpenCL host structure");
+        return false;
+    }
+
+    auto it = dielec_list.cbegin();
+    for(int i = 0; i < dielec_list.size(); i++) {
+        *((cl_float*)*ptr + i) = (*it)->reflection_index;
+    }
+
+    return true;
+}

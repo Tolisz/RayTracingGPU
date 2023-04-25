@@ -324,7 +324,7 @@ bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scatter
 bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Reflectance* materials, mwc64x_state_t* rng)
 {
     *attenuation = (float3)(1.0f, 1.0f, 1.0f);
-    float refraction_ratio = rec->front_face ? (1.0f / materials->ir[rec->mat_num]) : materials->ir[rec->mat_num];
+    float refraction_ratio = rec->front_face ? (1.0f / materials->reflection_index[rec->mat_num]) : materials->reflection_index[rec->mat_num];
 
     float3 unit_direction = normalize(r_in->direction);
     float cos_theta = fmin(dot(-unit_direction, rec->normal), 1.0f); 

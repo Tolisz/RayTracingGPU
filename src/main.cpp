@@ -69,7 +69,7 @@ Material_Fuzz;
 
 typedef struct _Material_Reflectance
 {
-    cl_float ir[2];
+    cl_float reflection_index[2];
 }
 Material_Reflectance;
 
@@ -219,32 +219,6 @@ int main(int argc, char** argv)
     test_sphere.mat_num[4] = 1;
 
 
-    // Materials materials;
-    // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
-    // materials.albedo[1] = {0.8f, 0.8f, 0.8f};
-
-    // materials.ir[2] = 1.5f;
-
-    // materials.albedo[3] = {0.8f, 0.6f, 0.2f};
-    // materials.fuzz[3] = 0.4f;
-
-    // materials.ir[4] = 1.5f;
-
-    Material_Albedo mat_albedo;
-
-    mat_albedo.albedo[0] = {0.7f, 0.3f, 0.3f};
-    mat_albedo.albedo[1] = {0.8f, 0.8f, 0.8f};
-
-    Material_Fuzz mat_fuzz;
-
-    mat_fuzz.albedo[0] = {0.8f, 0.6f, 0.2f};
-    mat_fuzz.fuzz[0] = 0.4f;
-
-    Material_Reflectance mat_reflectance;
-
-    mat_reflectance.ir[0] = 1.5;
-    mat_reflectance.ir[1] = 1.5;
-
     auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
     auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
 
@@ -259,37 +233,35 @@ int main(int argc, char** argv)
     size_t ptr_metal_size;
     Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, nullptr);
 
+    
+    auto fuzz1 = std::make_shared<Dielectric>(1.5f);
+    auto fuzz2 = std::make_shared<Dielectric>(1.5f);
+
+    void* ptr_fuzz = nullptr;
+    size_t ptr_fuzz_size;
+    Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, nullptr);
+
 
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-
-    // err = clSetKernelArg(kernel, 3, sizeof(Material_Albedo), &mat_albedo);
-    // if (err < 0) {
-    //     ERROR("Can not set Kernel Argument " << err);
-    // }
-
     err = clSetKernelArg(kernel, 3, ptr_albedo_size, ptr_albedo);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
-
-    // err = clSetKernelArg(kernel, 4, sizeof(Material_Fuzz), &mat_fuzz);
-    // if (err < 0) {
-    //     ERROR("Can not set Kernel Argument " << err);
-    // }
 
     err = clSetKernelArg(kernel, 4, ptr_metal_size, ptr_metal);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    err = clSetKernelArg(kernel, 5, sizeof(Material_Reflectance), &mat_reflectance);
+    err = clSetKernelArg(kernel, 5, ptr_fuzz_size, ptr_fuzz);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
+
 
     size_t global_size[2] = {image_height, image_width};
     err = clEnqueueNDRangeKernel(cl_wrapper.queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);

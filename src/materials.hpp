@@ -12,6 +12,12 @@ public:
 };
 
 
+
+
+
+
+
+
 class Lambertian: public Material
 {
 public:
@@ -41,6 +47,12 @@ public:
 private:
     static std::list<Lambertian*> lamb_list;
 };
+
+
+
+
+
+
 
 
 class Metal: public Material
@@ -76,9 +88,17 @@ private:
 };
 
 
+
+
+
+
+
+
 class Dielectric: public Material
 {
 public:
+
+    Dielectric(const float& index_of_reflection);
 
     virtual size_t get_material_id() const noexcept override { return mat_id; }
     virtual size_t get_material_num() const noexcept override { return mat_num; }
@@ -91,5 +111,16 @@ private:
 
 public:
 
+    float reflection_index;
+};
 
+class Dielectric_List
+{
+    friend class Dielectric;
+
+public:
+    static bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size) noexcept;
+
+private:
+    static std::list<Dielectric*> dielec_list;
 };

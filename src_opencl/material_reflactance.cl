@@ -3,7 +3,7 @@
 
 typedef struct _Material_Reflectance
 {
-    float ir[2];
+    float reflection_index[2];
 }
 Material_Reflectance;
 
