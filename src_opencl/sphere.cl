@@ -1,6 +1,10 @@
+#ifndef CL_SPHERES_WORLD
+#define CL_SPHERES_WORLD
+
 typedef struct _Spheres_World
 {
     // coordinates
+    // float3 center[NUMBER_OF_SPHERES];
     float x[NUMBER_OF_SPHERES];
     float y[NUMBER_OF_SPHERES];
     float z[NUMBER_OF_SPHERES];
@@ -23,3 +27,4 @@ typedef struct _Sphere
 }
 Sphere;
 
+#endif 

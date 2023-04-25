@@ -247,6 +247,8 @@ Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i)
 {
     Sphere sphere;
     sphere.center = (float3)(spheres_world->x[i], spheres_world->y[i], spheres_world->z[i]);
+    //sphere.center = spheres_world->center[i];
+    //printf("Dupa [%f, %f, %f]\n", spheres_world->center[i].x, spheres_world->center[i].y, spheres_world->center[i].z);
     sphere.r = spheres_world->r[i];
     sphere.mat_id = spheres_world->mat_id[i];
     sphere.mat_num = spheres_world->mat_num[i];

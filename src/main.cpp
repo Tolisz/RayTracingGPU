@@ -16,7 +16,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define NUMBER_OF_SPHERES 6
+#define NUMBER_OF_SPHERES 5
 #define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 50
 
@@ -41,37 +41,24 @@ typedef struct _Spheres_World
 Spheres_World;
 
 
-// Material 
-// 0 - lambertian
-// 1 - metal 
-// 2 - dielectric
-// typedef struct _Materials
+// typedef struct _Material_Albedo 
 // {
-//     // i-ty wpis w tablicy odpowiada i-tej sferze
-//     cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
-//     cl_float fuzz[NUMBER_OF_SPHERES];       // 1
-//     cl_float ir[NUMBER_OF_SPHERES];         // 2
-// } 
-// Materials;
+//     cl_float3 albedo[2];
+// }
+// Material_Albedo;
 
-typedef struct _Material_Albedo 
-{
-    cl_float3 albedo[2];
-}
-Material_Albedo;
+// typedef struct _Material_Fuzz
+// {
+//     cl_float3 albedo[1];
+//     cl_float fuzz[1];
+// }
+// Material_Fuzz;
 
-typedef struct _Material_Fuzz
-{
-    cl_float3 albedo[1];
-    cl_float fuzz[1];
-}
-Material_Fuzz;
-
-typedef struct _Material_Reflectance
-{
-    cl_float reflection_index[2];
-}
-Material_Reflectance;
+// typedef struct _Material_Reflectance
+// {
+//     cl_float reflection_index[2];
+// }
+// Material_Reflectance;
 
 #include "vec/vec.hpp"
 #include "materials.hpp"
@@ -183,6 +170,8 @@ int main(int argc, char** argv)
     }
 
     Spheres_World test_sphere;
+    
+    //test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
     test_sphere.x[0] = 0.0f;
     test_sphere.y[0] = 0.0f;
     test_sphere.z[0] = -1.0f;
@@ -190,6 +179,7 @@ int main(int argc, char** argv)
     test_sphere.mat_id[0] = 0;
     test_sphere.mat_num[0] = 0;
 
+    //test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
     test_sphere.x[1] = 0.0f;
     test_sphere.y[1] = -100.5f;
     test_sphere.z[1] = -1.0f;
@@ -197,6 +187,7 @@ int main(int argc, char** argv)
     test_sphere.mat_id[1] = 0;
     test_sphere.mat_num[1] = 1;
 
+    //test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
     test_sphere.x[2] = -1.0f;
     test_sphere.y[2] = 0.0f;
     test_sphere.z[2] = -1.0f;
@@ -204,6 +195,7 @@ int main(int argc, char** argv)
     test_sphere.mat_id[2] = 2;
     test_sphere.mat_num[2] = 0;
 
+    //test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
     test_sphere.x[3] = 1.0f;
     test_sphere.y[3] = 0.0f;
     test_sphere.z[3] = -1.0f;
@@ -211,6 +203,7 @@ int main(int argc, char** argv)
     test_sphere.mat_id[3] = 1; 
     test_sphere.mat_num[3] = 0; 
 
+    //test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
     test_sphere.x[4] = -1.0f;
     test_sphere.y[4] = 0.0f;
     test_sphere.z[4] = -1.0f;
@@ -242,7 +235,7 @@ int main(int argc, char** argv)
     Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, nullptr);
 
 
-    err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
+    err = clSetKernelArg(kernel, 2, sizeof(Spheres_World), &test_sphere);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
