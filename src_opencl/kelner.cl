@@ -73,31 +73,19 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
     int h = get_image_height(image);    // height
     int w = get_image_width(image);     // width
 
-    // Camera 
-    //float3 horizontal = (float3)(cam.viewport_width, 0.0f, 0.0f);
-    //float3 vertical = (float3)(0.0f, cam.viewport_height, 0.0f);
-    //float3 lower_left_corner = cam.origin - horizontal / 2 - vertical / 2 - (float3)(0.0f, 0.0f, cam.focal_length);
-
-    // if (i == 0 && j == 0)
-    // {
-    //     printf("o = [%f, %f, %f]\n", cam.origin.x,cam.origin.y,cam.origin.z );
-    //     printf("l = [%f, %f, %f]\n", cam.lower_left_corner.x,cam.lower_left_corner.y,cam.lower_left_corner.z );
-    //     printf("h = [%f, %f, %f]\n", cam.horizontal.x,cam.horizontal.y,cam.horizontal.z );
-    //     printf("v = [%f, %f, %f]\n", cam.vertical.x,cam.vertical.y,cam.vertical.z );
-    // }
-    //ray.origin = cam.origin;
-    //ray.direction = lower_left_corner + u * horizontal + v * vertical - cam.origin;
+    if (i == 0 && j == 0) {
+        for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
+            printf("k = %d\n", k);
+            printf("c = [%f, %f, %f]\n", spheres_world.c[k].x, spheres_world.c[k].y, spheres_world.c[k].z);
+            printf("r = %f\n", spheres_world.r[k]);
+            printf("mat_id = %d\n", spheres_world.mat_id[k]);
+            printf("mat_num = %d\n\n", spheres_world.mat_num[k]);
+        }
+    }
 
     // Random number generator
     mwc64x_state_t rng;
     MWC64X_SeedStreams(&rng, 2 * j * h * w, 2 * i * w * h);
-
-    // if (i == 0 && j == 0) {
-    //     printf("INT_MAX %d\n", INT_MAX);
-    //     printf("FLOAT_MAX %f\n", FLT_MAX);
-    //     for (int i = 0; i < 1000; i++)
-    //         printf("%.14f\n", random_float(&rng));
-    // }
 
     // Color computing
     float3 color = (float3)(0.0f, 0.0f, 0.0f); //= ray_color(&ray, &spheres_world);
@@ -111,12 +99,6 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
         color += ray_color(&ray, &spheres_world, &rng, &mat_albedo, &mat_fuzz, &mat_reflectance);
     }
 
-
-    // Set pixel color
-    // uint4 PixelColor = (uint4)(color.x * 255, color.y * 255 , color.z * 255, 255);
-    // int2 PixelPos = (int2)(j, i);
-    
-    // write_imageui(image, PixelPos, PixelColor);
     write_color(image, color);
 }
 
@@ -139,29 +121,14 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
         }
 
         if (spheres_world_hit(spheres_world, ray, 0.001f, FLT_MAX, &rec)) {
-            //return 0.5f * (rec.normal + 1.0f);
-
             float3 attenuation;
             Ray scattered;
-            // switch (rec.mat_id) {
-            //     // Lambertian
-            //     case 0:
-            //         if (scatter_lambertian(ray, &rec, &attenuation, &scattered, materials, rng)) {
-            //             ray->origin = scattered.origin;
-            //             ray->direction = scattered.direction;
-            //             end_attenuation *= 1.0f;
-            //         }
-            //         else  {
-            //             return (float3)(0.0f, 0.0f, 0.0f);
-            //         }
-            //         break;
-            // }
 
-            //printf("%d", rec.mat_id);
             switch (rec.mat_id)
             { 
                 // Lambertian
                 case 0:
+
                     if (scatter_lambertian(ray, &rec, &attenuation, &scattered, mat_albedo, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
@@ -175,6 +142,7 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
 
                 // Metal
                 case 1:
+
                     if (scatter_metal(ray, &rec, &attenuation, &scattered, mat_fuzz, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
@@ -196,17 +164,6 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
 
                     break;
             }
-
-            // printf("mat_id = %d\n", rec.mat_id);
-
-            // float3 rand = random_in_unit_sphere(rng);
-            // float3 target = rec.p + rec.normal + rand;
-            // // float3 target = reflect(rec.p - ray->direction, rec.normal);
-
-            // ray->origin = rec.p;
-            // ray->direction = target - rec.p;
-
-            // end_attenuation *= 0.5f;
         }
         else{
             break;
@@ -246,9 +203,8 @@ bool spheres_world_hit(Spheres_World* spheres_world, Ray* ray, float t_min, floa
 Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i)
 {
     Sphere sphere;
-    sphere.center = (float3)(spheres_world->x[i], spheres_world->y[i], spheres_world->z[i]);
-    //sphere.center = spheres_world->center[i];
-    //printf("Dupa [%f, %f, %f]\n", spheres_world->center[i].x, spheres_world->center[i].y, spheres_world->center[i].z);
+    //sphere.center = (float3)(spheres_world->x[i], spheres_world->y[i], spheres_world->z[i]);
+    sphere.center = spheres_world->c[i].xyz;
     sphere.r = spheres_world->r[i];
     sphere.mat_id = spheres_world->mat_id[i];
     sphere.mat_num = spheres_world->mat_num[i];
@@ -366,6 +322,8 @@ void write_color(write_only image2d_t image, float3 color)
         clamp(color.x, 0.0f, 0.9999f) * 256,
         clamp(color.y, 0.0f, 0.9999f) * 256,
         clamp(color.z, 0.0f, 0.9999f) * 256, 256);
+
+    //printf("PixelColor = [%f, %f, %f]\n", color.x, color.y, color.z);
 
     write_imageui(image, PixelPos, PixelColor);
 }

@@ -25,18 +25,19 @@
 
 typedef struct _Spheres_World
 {
+    cl_float3 center[NUMBER_OF_SPHERES];
     // coordinates
-    cl_float x[NUMBER_OF_SPHERES];
-    cl_float y[NUMBER_OF_SPHERES];
-    cl_float z[NUMBER_OF_SPHERES];
+    // cl_float x[NUMBER_OF_SPHERES];
+    // cl_float y[NUMBER_OF_SPHERES];
+    // cl_float z[NUMBER_OF_SPHERES];
 
     // radius
     cl_float r[NUMBER_OF_SPHERES];
 
     // materials
     // ID materialu, czyli liczba wskazująca jaki to jest materiał
-    cl_uint mat_id[NUMBER_OF_SPHERES];
-    cl_uint mat_num[NUMBER_OF_SPHERES];
+    cl_int mat_id[NUMBER_OF_SPHERES];
+    cl_int mat_num[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
 
@@ -95,6 +96,7 @@ int main(int argc, char** argv)
     build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(NUMBER_OF_SPHERES); 
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
+    std::cout << "BUILD OPTIONS = " << build_options << "\n";   
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
         /* Find size of log and print to std output */
@@ -170,43 +172,31 @@ int main(int argc, char** argv)
     }
 
     Spheres_World test_sphere;
+    memset(&test_sphere, 0, sizeof(Spheres_World));
+
+    std::cout << "sieof(Spheres_World) = " << sizeof(Spheres_World) << std::endl;
     
-    //test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
-    test_sphere.x[0] = 0.0f;
-    test_sphere.y[0] = 0.0f;
-    test_sphere.z[0] = -1.0f;
+    test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
     test_sphere.r[0] = 0.5f;
     test_sphere.mat_id[0] = 0;
     test_sphere.mat_num[0] = 0;
 
-    //test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
-    test_sphere.x[1] = 0.0f;
-    test_sphere.y[1] = -100.5f;
-    test_sphere.z[1] = -1.0f;
+    test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
     test_sphere.r[1] = 100.0f;
     test_sphere.mat_id[1] = 0;
     test_sphere.mat_num[1] = 1;
 
-    //test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
-    test_sphere.x[2] = -1.0f;
-    test_sphere.y[2] = 0.0f;
-    test_sphere.z[2] = -1.0f;
+    test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
     test_sphere.r[2] = 0.5f;
     test_sphere.mat_id[2] = 2;
     test_sphere.mat_num[2] = 0;
 
-    //test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
-    test_sphere.x[3] = 1.0f;
-    test_sphere.y[3] = 0.0f;
-    test_sphere.z[3] = -1.0f;
+    test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
     test_sphere.r[3] = 0.5f;
     test_sphere.mat_id[3] = 1; 
     test_sphere.mat_num[3] = 0; 
 
-    //test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
-    test_sphere.x[4] = -1.0f;
-    test_sphere.y[4] = 0.0f;
-    test_sphere.z[4] = -1.0f;
+    test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
     test_sphere.r[4] = -0.4f;
     test_sphere.mat_id[4] = 2;
     test_sphere.mat_num[4] = 1;
