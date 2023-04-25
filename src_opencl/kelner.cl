@@ -26,10 +26,6 @@ Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i);
 // ------
 bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* rec);
 
-// HIT RECORD
-// ----------
-void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal);
-
 
 /// ---------------------------------- ///
 ///          HELP FUNCTIONS            ///
@@ -276,15 +272,6 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
     hit_record_set_face_normal(rec, ray, outward_normal);
     
     return true;
-}
-
-/// ------------------ ///
-///     HIT RECORD     ///
-/// ------------------ ///
-
-void hit_record_set_face_normal(Hit_Record* rec ,Ray* r, float3 outward_normal) {
-    rec->front_face = dot(r->direction, outward_normal) < 0;
-    rec->normal = rec->front_face ? outward_normal :-outward_normal;
 }
 
 // ---------

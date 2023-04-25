@@ -1,3 +1,6 @@
+#ifndef CL_HIT_RECORD
+#define CL_HIT_RECORD
+
 typedef struct _Hit_Record
 {
     float3 p;
@@ -10,3 +13,11 @@ typedef struct _Hit_Record
     int sphere_id;
 }
 Hit_Record;
+
+void hit_record_set_face_normal(Hit_Record* rec, Ray* r, float3 outward_normal)
+{
+    rec->front_face = dot(r->direction, outward_normal) < 0;
+    rec->normal = rec->front_face ? outward_normal :-outward_normal;
+}
+
+#endif

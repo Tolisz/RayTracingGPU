@@ -34,6 +34,7 @@ typedef struct _Spheres_World
     cl_float r[NUMBER_OF_SPHERES];
 
     // materials
+    // ID materialu, czyli liczba wskazująca jaki to jest materiał
     cl_int material[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
@@ -45,6 +46,7 @@ Spheres_World;
 // 2 - dielectric
 typedef struct _Materials
 {
+    // i-ty wpis w tablicy odpowiada i-tej sferze
     cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
     cl_float fuzz[NUMBER_OF_SPHERES];       // 1
     cl_float ir[NUMBER_OF_SPHERES];         // 2
@@ -221,7 +223,6 @@ int main(int argc, char** argv)
     //     std::cout << "i=" << i << " " << *((float*)test_materials + i) << "\n";
     // }
 
-    // std::cout << "albedo: \n";
 
     // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
         *((float*)test_materials + 0*4 + 0) = 0.7f;
@@ -251,7 +252,7 @@ int main(int argc, char** argv)
     // materials.ir[4] = 1.5f;
         *((float*)test_materials + 30 + 4) = 1.5f;
 
-
+    std::cout << "albedo: \n";
 
     for(int i = 0; i < NUMBER_OF_SPHERES; i++) {
         for (int j = 0; j < 4; j++) {
