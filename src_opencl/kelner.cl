@@ -20,15 +20,15 @@
 
 // RAY 
 // ---
-float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
-    Material_Albedo*         mat_albedo,
-    Material_Fuzz*           mat_fuzz,
-    Material_Reflectance*    mat_reflectance);
+float3 ray_color(Ray* ray, __global Spheres_World* spheres_world, mwc64x_state_t* rng,
+    __global Material_Albedo*         mat_albedo,
+    __global Material_Fuzz*           mat_fuzz,
+    __global Material_Reflectance*    mat_reflectance);
 
 // SPHERES WORLD
 // ------------- 
-bool spheres_world_hit(Spheres_World* spheres_world, Ray* ray, float t_min, float t_max, Hit_Record* rec);
-Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i);
+bool spheres_world_hit(__global Spheres_World* spheres_world, Ray* ray, float t_min, float t_max, Hit_Record* rec);
+Sphere sphere_world_get_sphere(__global Spheres_World* spheres_world, int i);
 
 // SPHERE
 // ------
@@ -42,9 +42,9 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 
 // SCATTER 
 // --------
-bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Albedo* materials, mwc64x_state_t* rng);
-bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Fuzz* materials, mwc64x_state_t* rng);
-bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Reflectance* materials, mwc64x_state_t* rng);
+bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Albedo* materials, mwc64x_state_t* rng);
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Fuzz* materials, mwc64x_state_t* rng);
+bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Reflectance* materials, mwc64x_state_t* rng);
 
 // COLOR
 // ----- 
@@ -62,26 +62,32 @@ float reflectance(float cosine, float ref_dx);
 ///            MAIN KELNER             ///
 /// ---------------------------------- ///
 
-__kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World spheres_world, 
-    Material_Albedo         mat_albedo,
-    Material_Fuzz           mat_fuzz,
-    Material_Reflectance    mat_reflectance)
-{
+__kernel void ray_tracer
+(
+    write_only image2d_t image, 
+    __global Camera*                    cam, 
+    __global Spheres_World*             spheres_world, 
+    __global Material_Albedo*           mat_albedo,
+    __global Material_Fuzz*             mat_fuzz,
+    __global Material_Reflectance*      mat_reflectance
+){
     int i = get_global_id(0);   // height
     int j = get_global_id(1);   // width
 
     int h = get_image_height(image);    // height
     int w = get_image_width(image);     // width
 
-    if (i == 0 && j == 0) {
-        for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
-            printf("k = %d\n", k);
-            printf("c = [%f, %f, %f]\n", spheres_world.c[k].x, spheres_world.c[k].y, spheres_world.c[k].z);
-            printf("r = %f\n", spheres_world.r[k]);
-            printf("mat_id = %d\n", spheres_world.mat_id[k]);
-            printf("mat_num = %d\n\n", spheres_world.mat_num[k]);
-        }
-    }
+    // To musi pojsc do trybu debagowego
+    // 
+    // if (i == 0 && j == 0) {
+    //     for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
+    //         printf("k = %d\n", k);
+    //         printf("c = [%f, %f, %f]\n", spheres_world->c[k].x, spheres_world->c[k].y, spheres_world->c[k].z);
+    //         printf("r = %f\n", spheres_world->r[k]);
+    //         printf("mat_id = %d\n", spheres_world->mat_id[k]);
+    //         printf("mat_num = %d\n\n", spheres_world->mat_num[k]);
+    //     }
+    // }
 
     // Random number generator
     mwc64x_state_t rng;
@@ -95,8 +101,8 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
         float v = (float)(i + random_float(&rng)) / (h - 1);
 
         // Ray
-        Ray ray = camera_get_ray(&cam, &rng, u, v);
-        color += ray_color(&ray, &spheres_world, &rng, &mat_albedo, &mat_fuzz, &mat_reflectance);
+        Ray ray = camera_get_ray(cam, &rng, u, v);
+        color += ray_color(&ray, spheres_world, &rng, mat_albedo, mat_fuzz, mat_reflectance);
     }
 
     write_color(image, color);
@@ -106,10 +112,10 @@ __kernel void ray_tracer(write_only image2d_t image, Camera cam, Spheres_World s
 ///     RAY      ///
 /// ------------ ///
 
-float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
-    Material_Albedo*         mat_albedo,
-    Material_Fuzz*           mat_fuzz,
-    Material_Reflectance*    mat_reflectance)
+float3 ray_color(Ray* ray, __global Spheres_World* spheres_world, mwc64x_state_t* rng,
+    __global Material_Albedo*         mat_albedo,
+    __global Material_Fuzz*           mat_fuzz,
+    __global Material_Reflectance*    mat_reflectance)
 {
     Hit_Record rec;
 
@@ -179,7 +185,7 @@ float3 ray_color(Ray* ray, Spheres_World* spheres_world, mwc64x_state_t* rng,
 ///     SPHERE WORLD     ///
 /// -------------------- ///
 
-bool spheres_world_hit(Spheres_World* spheres_world, Ray* ray, float t_min, float t_max, Hit_Record* rec)
+bool spheres_world_hit(__global Spheres_World* spheres_world, Ray* ray, float t_min, float t_max, Hit_Record* rec)
 {   
     Hit_Record temp_rec;
     bool hit_anithing = false;
@@ -200,7 +206,7 @@ bool spheres_world_hit(Spheres_World* spheres_world, Ray* ray, float t_min, floa
     return hit_anithing;
 }
 
-Sphere sphere_world_get_sphere(Spheres_World* spheres_world, int i)
+Sphere sphere_world_get_sphere(__global Spheres_World* spheres_world, int i)
 {
     Sphere sphere;
     //sphere.center = (float3)(spheres_world->x[i], spheres_world->y[i], spheres_world->z[i]);
@@ -250,7 +256,7 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
 // ---------
 //  SCATTER 
 // ---------
-bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, Material_Albedo* materials, mwc64x_state_t* rng)
+bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Albedo* materials, mwc64x_state_t* rng)
 {
     float3 scatter_direction = rec->normal + random_in_unit_sphere(rng);
     
@@ -267,7 +273,7 @@ bool scatter_lambertian(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* sc
     return true;
 }
 
-bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Fuzz* materials, mwc64x_state_t* rng)
+bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Fuzz* materials, mwc64x_state_t* rng)
 {
     float3 reflected = reflect(r_in->direction , rec->normal);
 
@@ -279,7 +285,7 @@ bool scatter_metal(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scatter
     return (dot(scattered->direction, rec->normal) > 0);
 }
 
-bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered,  Material_Reflectance* materials, mwc64x_state_t* rng)
+bool scatter_dielectric(Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, __global Material_Reflectance* materials, mwc64x_state_t* rng)
 {
     *attenuation = (float3)(1.0f, 1.0f, 1.0f);
     float refraction_ratio = rec->front_face ? (1.0f / materials->reflection_index[rec->mat_num]) : materials->reflection_index[rec->mat_num];

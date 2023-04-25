@@ -15,7 +15,7 @@ typedef struct _Camera
 } 
 Camera;
 
-Ray camera_get_ray(Camera* cam, mwc64x_state_t* rng, float u, float v)
+Ray camera_get_ray(__global Camera* cam, mwc64x_state_t* rng, float u, float v)
 {
     float3 rd = cam->lens_radius * random_in_unit_disk(rng);
     float3 offset = cam->u * rd.x + cam->v * rd.y;

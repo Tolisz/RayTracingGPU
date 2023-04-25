@@ -70,9 +70,37 @@ Spheres_World;
 
 int main(int argc, char** argv)
 {
-    CL::CLwrapper cl_wrapper;
-
     cl_int err;
+
+    /* OpenCL platform */
+
+    cl_platform_id platform;
+    err = clGetPlatformIDs(1, &platform, NULL);
+    if (err < 0) {
+        ERROR("Any platform has not been detected, do you have any OpenCL SDK installed? err = " << err);
+    }
+
+    /* OpenCL device */
+    
+    cl_device_id device;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+    if (err < 0) {
+        ERROR("Any device related to previously found platform has not been detected; err = " << err);
+    }
+
+    /* OpenCL Context */
+    
+    cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+    if (err < 0) {
+        ERROR("Context can not be created: err = " << err);
+    }
+
+    /* OpenCL comand queue */
+
+    cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, NULL, &err);
+    if(err < 0) {
+        ERROR("Comand queue can not be created: err = " << err);
+    }
 
     /* OpenCL program and kelner*/
 
@@ -86,7 +114,7 @@ int main(int argc, char** argv)
     }
 
     cl_program program;
-    program = clCreateProgramWithSource(cl_wrapper.context, 1, (const char**)&program_buffer, &program_size, &err);
+    program = clCreateProgramWithSource(context, 1, (const char**)&program_buffer, &program_size, &err);
     if(err < 0) {
         ERROR("Can not create a program from the source file");
     }
@@ -103,10 +131,10 @@ int main(int argc, char** argv)
         size_t log_size;
         char* program_log;
 
-        clGetProgramBuildInfo(program, cl_wrapper.device, CL_PROGRAM_BUILD_LOG,  0, NULL, &log_size);
+        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG,  0, NULL, &log_size);
         program_log = (char*) malloc(log_size + 1);
         program_log[log_size] = '\0';
-        clGetProgramBuildInfo(program, cl_wrapper.device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
+        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
         printf("%s\n", program_log);
         free(program_log);
         exit(1);
@@ -143,7 +171,7 @@ int main(int argc, char** argv)
     image_desc.num_samples = 0;
     image_desc.mem_object = NULL;
 
-    cl_mem cl_image = clCreateImage(cl_wrapper.context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
+    cl_mem cl_image = clCreateImage(context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
     if (err < 0) {
         ERROR("Can not create image object " << err);
     }
@@ -166,7 +194,12 @@ int main(int argc, char** argv)
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
 
-    err = clSetKernelArg(kernel, 1, sizeof(camcl), &camcl);
+    cl_mem cam_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(CL_Camera), &camcl, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer for camera " << err);
+    }
+
+    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cam_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -202,52 +235,66 @@ int main(int argc, char** argv)
     test_sphere.mat_num[4] = 1;
 
 
+    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Spheres_World), &test_sphere, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer object" << err);
+    }
+
+    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &sferki);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
+    // MATERIAŁY
+    // ----------
+
     auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
     auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
-
     void* ptr_albedo = nullptr;
     size_t ptr_albedo_size;
     Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, nullptr);
-
+    cl_mem albedo_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_albedo_size, ptr_albedo, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer" << err);
+    }
 
     auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
-
     void* ptr_metal = nullptr;
     size_t ptr_metal_size;
     Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, nullptr);
-
+    cl_mem metal_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_metal_size, ptr_metal, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer" << err);
+    }
     
     auto fuzz1 = std::make_shared<Dielectric>(1.5f);
     auto fuzz2 = std::make_shared<Dielectric>(1.5f);
-
     void* ptr_fuzz = nullptr;
     size_t ptr_fuzz_size;
     Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, nullptr);
+    cl_mem fuzz_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_fuzz_size, ptr_fuzz, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer" << err);
+    }
 
-
-    err = clSetKernelArg(kernel, 2, sizeof(Spheres_World), &test_sphere);
+    err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &albedo_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    err = clSetKernelArg(kernel, 3, ptr_albedo_size, ptr_albedo);
+    err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &metal_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    err = clSetKernelArg(kernel, 4, ptr_metal_size, ptr_metal);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-
-    err = clSetKernelArg(kernel, 5, ptr_fuzz_size, ptr_fuzz);
+    err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &fuzz_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
 
     size_t global_size[2] = {image_height, image_width};
-    err = clEnqueueNDRangeKernel(cl_wrapper.queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (err < 0) {
         ERROR("Can not enqueue kernle " << err);
     }
@@ -264,7 +311,7 @@ int main(int argc, char** argv)
     region[1] = image_height; 
     region[2] = 1;
 
-    err = clEnqueueReadImage(cl_wrapper.queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
+    err = clEnqueueReadImage(queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
     if(err < 0) {
         perror("Couldn't read from the image object");
         exit(1);   
