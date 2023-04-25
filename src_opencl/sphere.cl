@@ -9,7 +9,8 @@ typedef struct _Spheres_World
     float r[NUMBER_OF_SPHERES];
 
     // material
-    uint material_type[NUMBER_OF_SPHERES];
+    uint mat_id[NUMBER_OF_SPHERES];
+    uint mat_num[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
 
@@ -17,7 +18,8 @@ typedef struct _Sphere
 {
     float3 center;
     float r;
-    uint material_type;
+    uint mat_id;
+    uint mat_num;
 }
 Sphere;
 

@@ -35,7 +35,8 @@ typedef struct _Spheres_World
 
     // materials
     // ID materialu, czyli liczba wskazująca jaki to jest materiał
-    cl_int material[NUMBER_OF_SPHERES];
+    cl_uint mat_id[NUMBER_OF_SPHERES];
+    cl_uint mat_num[NUMBER_OF_SPHERES];
 } 
 Spheres_World;
 
@@ -52,6 +53,25 @@ typedef struct _Materials
     cl_float ir[NUMBER_OF_SPHERES];         // 2
 } 
 Materials;
+
+typedef struct _Material_Albedo 
+{
+    cl_float3 albedo[2];
+}
+Material_Albedo;
+
+typedef struct _Material_Fuzz
+{
+    cl_float3 albedo[1];
+    cl_float fuzz[1];
+}
+Material_Fuzz;
+
+typedef struct _Material_Reflectance
+{
+    cl_float ir[2];
+}
+Material_Reflectance;
 
 #include "vec/vec.hpp"
 
@@ -167,45 +187,65 @@ int main(int argc, char** argv)
     test_sphere.y[0] = 0.0f;
     test_sphere.z[0] = -1.0f;
     test_sphere.r[0] = 0.5f;
-    test_sphere.material[0] = 0;
+    test_sphere.mat_id[0] = 0;
+    test_sphere.mat_num[0] = 0;
 
     test_sphere.x[1] = 0.0f;
     test_sphere.y[1] = -100.5f;
     test_sphere.z[1] = -1.0f;
     test_sphere.r[1] = 100.0f;
-    test_sphere.material[1] = 0;
+    test_sphere.mat_id[1] = 0;
+    test_sphere.mat_num[1] = 1;
 
     test_sphere.x[2] = -1.0f;
     test_sphere.y[2] = 0.0f;
     test_sphere.z[2] = -1.0f;
     test_sphere.r[2] = 0.5f;
-    test_sphere.material[2] = 2;
+    test_sphere.mat_id[2] = 2;
+    test_sphere.mat_num[2] = 0;
 
     test_sphere.x[3] = 1.0f;
     test_sphere.y[3] = 0.0f;
     test_sphere.z[3] = -1.0f;
     test_sphere.r[3] = 0.5f;
-    test_sphere.material[3] = 1;
+    test_sphere.mat_id[3] = 1; 
+    test_sphere.mat_num[3] = 0; 
 
     test_sphere.x[4] = -1.0f;
     test_sphere.y[4] = 0.0f;
     test_sphere.z[4] = -1.0f;
     test_sphere.r[4] = -0.4f;
-    test_sphere.material[4] = 2;
+    test_sphere.mat_id[4] = 2;
+    test_sphere.mat_num[4] = 1;
 
 
     // Materials materials;
     // materials.albedo[0] = {0.7f, 0.3f, 0.3f};
     // materials.albedo[1] = {0.8f, 0.8f, 0.8f};
 
-    // materials.albedo[2] = {0.8f, 0.8f, 0.8f};
-    // //materials.fuzz[2] = 0.3f;
     // materials.ir[2] = 1.5f;
 
     // materials.albedo[3] = {0.8f, 0.6f, 0.2f};
     // materials.fuzz[3] = 0.4f;
 
     // materials.ir[4] = 1.5f;
+
+    Material_Albedo mat_albedo;
+
+    mat_albedo.albedo[0] = {0.7f, 0.3f, 0.3f};
+    mat_albedo.albedo[1] = {0.8f, 0.8f, 0.8f};
+
+    Material_Fuzz mat_fuzz;
+
+    mat_fuzz.albedo[0] = {0.8f, 0.6f, 0.2f};
+    mat_fuzz.fuzz[0] = 0.4f;
+
+    Material_Reflectance mat_reflectance;
+
+    mat_reflectance.ir[0] = 1.5;
+    mat_reflectance.ir[1] = 1.5;
+
+    /*
 
     size_t test_materials_size = NUMBER_OF_SPHERES * (sizeof(cl_float3) + 2 * sizeof(cl_float));
     std::cout << "test_size = " << test_materials_size << "\n";
@@ -271,15 +311,33 @@ int main(int argc, char** argv)
         std::cout << *((float*)test_materials + i + 30) << '\n'; 
     }
 
+
+    */
+
     err = clSetKernelArg(kernel, 2, sizeof(test_sphere), &test_sphere);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
     //std::cout << "sizeof(materials) = " << sizeof(materials) << std::endl;
-    //std::cout << "sizof(SphereWorld) = " << sizeof(test_sphere) << std::endl;
+    //std::cout << "sizof(SphereWorld) = " << sizeof(test_sphere) << std::endl; 
 
-    err = clSetKernelArg(kernel, 3, test_materials_size, test_materials);
+    // err = clSetKernelArg(kernel, 3, sizeof(Materials), &materials);
+    // if (err < 0) {
+    //     ERROR("Can not set Kernel Argument " << err);
+    // }
+
+    err = clSetKernelArg(kernel, 3, sizeof(Material_Albedo), &mat_albedo);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
+    err = clSetKernelArg(kernel, 4, sizeof(Material_Fuzz), &mat_fuzz);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
+    err = clSetKernelArg(kernel, 5, sizeof(Material_Reflectance), &mat_reflectance);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }

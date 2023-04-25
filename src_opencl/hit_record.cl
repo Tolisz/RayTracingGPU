@@ -9,8 +9,8 @@ typedef struct _Hit_Record
     float t;
     bool front_face;
 
-    int material_type;
-    int sphere_id;
+    int mat_id;
+    int mat_num;
 }
 Hit_Record;
 
