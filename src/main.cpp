@@ -20,46 +20,18 @@
 #define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 50
 
-#include "clwrapper.hpp"
 #include "camera.hpp"
 
 typedef struct _Spheres_World
 {
     cl_float3 center[NUMBER_OF_SPHERES];
-    // coordinates
-    // cl_float x[NUMBER_OF_SPHERES];
-    // cl_float y[NUMBER_OF_SPHERES];
-    // cl_float z[NUMBER_OF_SPHERES];
-
-    // radius
     cl_float r[NUMBER_OF_SPHERES];
 
-    // materials
-    // ID materialu, czyli liczba wskazująca jaki to jest materiał
-    cl_int mat_id[NUMBER_OF_SPHERES];
-    cl_int mat_num[NUMBER_OF_SPHERES];
+    cl_int mat_id[NUMBER_OF_SPHERES];       // ID materiału który będzie wykorzystywany
+    cl_int mat_num[NUMBER_OF_SPHERES];      // Numer materiału w tablicy dla konkretnego ID
 } 
 Spheres_World;
 
-
-// typedef struct _Material_Albedo 
-// {
-//     cl_float3 albedo[2];
-// }
-// Material_Albedo;
-
-// typedef struct _Material_Fuzz
-// {
-//     cl_float3 albedo[1];
-//     cl_float fuzz[1];
-// }
-// Material_Fuzz;
-
-// typedef struct _Material_Reflectance
-// {
-//     cl_float reflection_index[2];
-// }
-// Material_Reflectance;
 
 #include "vec/vec.hpp"
 #include "materials.hpp"
@@ -152,7 +124,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 400;
+    size_t image_width = 600;
     size_t image_height = image_width * aspect_ratio;
 
     cl_image_format image_format;

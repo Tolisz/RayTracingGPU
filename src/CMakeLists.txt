@@ -1,7 +1,6 @@
 add_executable(rt_gpu 
     main.cpp
     camera.cpp
-    clwrapper.cpp
     spheres.cpp
     materials.cpp
 )
