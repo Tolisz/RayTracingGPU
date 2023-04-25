@@ -18,7 +18,7 @@ char* read_file(const char* file_path, size_t* file_size)
 {
     FILE* file_handle = fopen(file_path, "rb");
     if(!file_handle) {
-        WARRING("Can not open file \"" << file_path << "\": " << strerror(errno));
+        WARNING("Can not open file \"" << file_path << "\": " << strerror(errno));
         return nullptr;
     }
 
@@ -33,7 +33,7 @@ char* read_file(const char* file_path, size_t* file_size)
     // Read form file
     char* file_buffer = (char*)malloc(program_size + 1);
     if (!file_buffer) {
-        WARRING("Can not allocate memory for a file \"" << file_path << "\"");
+        WARNING("Can not allocate memory for a file \"" << file_path << "\"");
         fclose(file_handle);
         return nullptr;
     }

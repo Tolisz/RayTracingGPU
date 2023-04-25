@@ -11,7 +11,7 @@
     }                                                                               \
     while (0)
 
-#define WARRING(msg)                                                                    \
+#define WARNING(msg)                                                                    \
     do                                                                                  \
     {                                                                                   \
         std::cerr << "[WARNING][" << __FILE__ << ":" << __LINE__ << "] " << msg << '\n';       \

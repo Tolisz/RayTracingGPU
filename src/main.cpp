@@ -45,14 +45,14 @@ Spheres_World;
 // 0 - lambertian
 // 1 - metal 
 // 2 - dielectric
-typedef struct _Materials
-{
-    // i-ty wpis w tablicy odpowiada i-tej sferze
-    cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
-    cl_float fuzz[NUMBER_OF_SPHERES];       // 1
-    cl_float ir[NUMBER_OF_SPHERES];         // 2
-} 
-Materials;
+// typedef struct _Materials
+// {
+//     // i-ty wpis w tablicy odpowiada i-tej sferze
+//     cl_float3 albedo[NUMBER_OF_SPHERES];    // 0, 1 
+//     cl_float fuzz[NUMBER_OF_SPHERES];       // 1
+//     cl_float ir[NUMBER_OF_SPHERES];         // 2
+// } 
+// Materials;
 
 typedef struct _Material_Albedo 
 {
@@ -74,6 +74,7 @@ typedef struct _Material_Reflectance
 Material_Reflectance;
 
 #include "vec/vec.hpp"
+#include "materials.hpp"
 
 //  --------------------------------  //
 //                MAIN                //
@@ -165,7 +166,6 @@ int main(int argc, char** argv)
 
     // Camera settings
     
-
     vec::vec3 lookfrom(3,3,2);
     vec::vec3 lookat(0,0,-1);
     vec::vec3 vup(0,1,0);
@@ -244,6 +244,33 @@ int main(int argc, char** argv)
 
     mat_reflectance.ir[0] = 1.5;
     mat_reflectance.ir[1] = 1.5;
+
+    auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
+    auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
+
+    void* ptr_albedo = nullptr;
+    size_t ptr_albedo_size;
+    size_t ptr_table_size;
+    Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, &ptr_table_size);
+
+    if (!ptr_albedo) {
+        std::cout << "Dupa" << std::endl;
+    }
+
+    std::cout << "size1 = " << ptr_albedo_size << std::endl;
+    std::cout << "size2 = " << sizeof(Material_Albedo) << std::endl;
+
+    std::cout << "albd1.id = " << albedo1->get_material_id() << std::endl;
+    std::cout << "albd2.id = " << albedo2->get_material_id() << std::endl;
+    std::cout << "albd1.num = " << albedo1->get_material_num() << std::endl;
+    std::cout << "albd2.num = " << albedo2->get_material_num() << std::endl;
+
+    for(int i = 0; i < 2; i++) {
+        for (int j = 0; j < 4; j++) {
+            std::cout << *((float*)ptr_albedo + i*4 + j) << " | "; 
+        }
+        std::cout << '\n';
+    }
 
     /*
 
@@ -327,7 +354,12 @@ int main(int argc, char** argv)
     //     ERROR("Can not set Kernel Argument " << err);
     // }
 
-    err = clSetKernelArg(kernel, 3, sizeof(Material_Albedo), &mat_albedo);
+    // err = clSetKernelArg(kernel, 3, sizeof(Material_Albedo), &mat_albedo);
+    // if (err < 0) {
+    //     ERROR("Can not set Kernel Argument " << err);
+    // }
+
+    err = clSetKernelArg(kernel, 3, ptr_albedo_size, ptr_albedo);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
