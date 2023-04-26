@@ -7,22 +7,18 @@
 #include "materials.hpp"
 
 
-class Spheres 
+
+class Spheres_World
 {
 public:
 
-    Spheres();
-    Spheres(const Spheres&) = default;
-    Spheres(Spheres&&) = default;
+    Spheres_World();
+    Spheres_World(const Spheres_World&) = default;
+    Spheres_World(Spheres_World&&) = default;
 
     void add_sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material);
 
-
-    /**
-     * 
-     * 
-    */
-    bool get_cl_structure(void* ptr, size_t* ptr_size, size_t* table_size);
+    bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size);
 
 private:
 

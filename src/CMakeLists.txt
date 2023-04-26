@@ -1,7 +1,7 @@
 add_executable(rt_gpu 
     main.cpp
     camera.cpp
-    spheres.cpp
+    spheres_world.cpp
     materials.cpp
 )
 

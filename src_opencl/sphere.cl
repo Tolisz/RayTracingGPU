@@ -4,13 +4,10 @@
 #include "hit_record.cl"
 #include "ray.cl"
 
-typedef struct _Spheres_World
+typedef struct __attribute__ ((packed)) _Spheres_World
 {   
-    // coordinates
+    // center
     float3 c[NUMBER_OF_SPHERES];
-    //float x[NUMBER_OF_SPHERES];
-    //float y[NUMBER_OF_SPHERES];
-    //float z[NUMBER_OF_SPHERES];
 
     // radius
     float r[NUMBER_OF_SPHERES];

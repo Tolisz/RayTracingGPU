@@ -42,17 +42,25 @@ __kernel void ray_tracer
     int h = get_image_height(image);    // height
     int w = get_image_width(image);     // width
 
-    // To musi pojsc do trybu debagowego
-    // 
-    // if (i == 0 && j == 0) {
-    //     for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
-    //         printf("k = %d\n", k);
-    //         printf("c = [%f, %f, %f]\n", spheres_world->c[k].x, spheres_world->c[k].y, spheres_world->c[k].z);
-    //         printf("r = %f\n", spheres_world->r[k]);
-    //         printf("mat_id = %d\n", spheres_world->mat_id[k]);
-    //         printf("mat_num = %d\n\n", spheres_world->mat_num[k]);
-    //     }
-    // }
+    if (i == 0 && j == 0) {
+        printf("sizeof(Spheres_World) on kelner = %d\n", sizeof(Spheres_World));
+    }
+
+    //To musi pojsc do trybu debagowego
+    
+    if (i == 0 && j == 0) {
+        printf("-------------- SPHERES --------------");
+        
+        for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
+            printf("k = %d\n", k);
+            printf("c = [%f, %f, %f]\n", spheres_world->c[k].x, spheres_world->c[k].y, spheres_world->c[k].z);
+            printf("r = %f\n", spheres_world->r[k]);
+            printf("mat_id = %d\n", spheres_world->mat_id[k]);
+            printf("mat_num = %d\n\n", spheres_world->mat_num[k]);
+        }
+    }
+
+
 
     // Random number generator
     mwc64x_state_t rng;

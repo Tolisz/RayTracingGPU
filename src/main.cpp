@@ -22,19 +22,20 @@
 
 #include "camera.hpp"
 
-typedef struct _Spheres_World
-{
-    cl_float3 center[NUMBER_OF_SPHERES];
-    cl_float r[NUMBER_OF_SPHERES];
+// typedef struct __attribute__ ((packed)) _Spheres_World
+// {
+//     cl_float3 center[NUMBER_OF_SPHERES];
+//     cl_float r[NUMBER_OF_SPHERES];
 
-    cl_int mat_id[NUMBER_OF_SPHERES];       // ID materiału który będzie wykorzystywany
-    cl_int mat_num[NUMBER_OF_SPHERES];      // Numer materiału w tablicy dla konkretnego ID
-} 
-Spheres_World;
+//     cl_int mat_id[NUMBER_OF_SPHERES];       // ID materiału który będzie wykorzystywany
+//     cl_int mat_num[NUMBER_OF_SPHERES];      // Numer materiału w tablicy dla konkretnego ID
+// } 
+// Spheres_World;
 
 
 #include "vec/vec.hpp"
 #include "materials.hpp"
+#include "spheres_world.hpp"
 
 //  --------------------------------  //
 //                MAIN                //
@@ -42,6 +43,62 @@ Spheres_World;
 
 int main(int argc, char** argv)
 {
+
+    // -----------------------------
+    //   WIRTUALNA SCENA (POCZĄTEK)
+    // -----------------------------
+
+    auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
+    auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
+
+    auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
+
+    auto fuzz1 = std::make_shared<Dielectric>(1.5f);
+    auto fuzz2 = std::make_shared<Dielectric>(1.5f);
+
+
+    // Sfery
+
+    Spheres_World world;
+    world.add_sphere(vec::vec3(0.0f, 0.0f, -1.0f), 0.5f, albedo1);
+    world.add_sphere(vec::vec3(0.0f, -100.5f, -1.0f), 100.0f, albedo2);
+    
+    world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), 0.5f, fuzz1);
+
+    world.add_sphere(vec::vec3(1.0f, 0.0f, -1.0f), 0.5f, metal1);
+    world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), -0.4f, fuzz2);
+
+
+    // -----------------------------
+    //   WIRTUALNA SCENA (KONIEC)
+    // -----------------------------
+
+
+    void* ptr_world;
+    size_t ptr_world_size;
+    size_t ptr_world_table_size;
+    world.get_cl_structure(&ptr_world, &ptr_world_size, &ptr_world_table_size);
+
+    // size_t offset1 = ptr_world_table_size * (sizeof(cl_float3));
+    // size_t offset2 = ptr_world_table_size * (sizeof(cl_float3) + sizeof(cl_float));
+    // size_t offset3 = ptr_world_table_size * (sizeof(cl_float3) + sizeof(cl_float) + sizeof(cl_int));
+    
+    // std::cout << offset1 << "\n" << offset2 << "\n" << offset3 << std::endl << std::endl;
+
+    // for (int i = 0; i < ptr_world_table_size; i++) {
+    //     std::cout << "Sfera nr " << i << std::endl;
+
+    //     for (int j = 0; j < 4; j++) {
+    //         std::cout << *((cl_float*)ptr_world + 4*i + j) << " ";
+    //     }
+
+    //     std::cout << "\nr = " << *((cl_float*)((char*)ptr_world + offset1) + i) << std::endl;
+    //     std::cout << "mat_id = " << *((cl_int*)((char*)ptr_world + offset2) + i)  << std::endl;
+    //     std::cout << "mat_num = " << *((cl_int*)((char*)ptr_world + offset3) + i)  << std::endl << std::endl;
+    // }
+
+
+    
     cl_int err;
 
     /* OpenCL platform */
@@ -93,7 +150,7 @@ int main(int argc, char** argv)
     free(program_buffer);
 
     std::string build_options = "-I./src_opencl "; 
-    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(NUMBER_OF_SPHERES); 
+    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(ptr_world_table_size); 
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
@@ -176,38 +233,44 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    Spheres_World test_sphere;
-    memset(&test_sphere, 0, sizeof(Spheres_World));
+    // Spheres_World test_sphere;
+    // memset(&test_sphere, 0, sizeof(Spheres_World));
 
-    std::cout << "sieof(Spheres_World) = " << sizeof(Spheres_World) << std::endl;
+    // std::cout << "sieof(Spheres_World) = " << sizeof(Spheres_World) << std::endl;
     
-    test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
-    test_sphere.r[0] = 0.5f;
-    test_sphere.mat_id[0] = 0;
-    test_sphere.mat_num[0] = 0;
+    // test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
+    // test_sphere.r[0] = 0.5f;
+    // test_sphere.mat_id[0] = 0;
+    // test_sphere.mat_num[0] = 0;
 
-    test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
-    test_sphere.r[1] = 100.0f;
-    test_sphere.mat_id[1] = 0;
-    test_sphere.mat_num[1] = 1;
+    // test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
+    // test_sphere.r[1] = 100.0f;
+    // test_sphere.mat_id[1] = 0;
+    // test_sphere.mat_num[1] = 1;
 
-    test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
-    test_sphere.r[2] = 0.5f;
-    test_sphere.mat_id[2] = 2;
-    test_sphere.mat_num[2] = 0;
+    // test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
+    // test_sphere.r[2] = 0.5f;
+    // test_sphere.mat_id[2] = 2;
+    // test_sphere.mat_num[2] = 0;
 
-    test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
-    test_sphere.r[3] = 0.5f;
-    test_sphere.mat_id[3] = 1; 
-    test_sphere.mat_num[3] = 0; 
+    // test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
+    // test_sphere.r[3] = 0.5f;
+    // test_sphere.mat_id[3] = 1; 
+    // test_sphere.mat_num[3] = 0; 
 
-    test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
-    test_sphere.r[4] = -0.4f;
-    test_sphere.mat_id[4] = 2;
-    test_sphere.mat_num[4] = 1;
+    // test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
+    // test_sphere.r[4] = -0.4f;
+    // test_sphere.mat_id[4] = 2;
+    // test_sphere.mat_num[4] = 1;
 
 
-    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Spheres_World), &test_sphere, &err);
+    // cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Spheres_World), &test_sphere, &err);
+    // if (err < 0) {
+    //     ERROR("Can not create buffer object" << err);
+    // }
+
+    // std::cout << "HOST SIZE" << ptr_world_size << "\n";
+    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_world_size, ptr_world, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
@@ -220,8 +283,6 @@ int main(int argc, char** argv)
     // MATERIAŁY
     // ----------
 
-    auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
-    auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
     void* ptr_albedo = nullptr;
     size_t ptr_albedo_size;
     Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, nullptr);
@@ -230,7 +291,7 @@ int main(int argc, char** argv)
         ERROR("Can not create buffer" << err);
     }
 
-    auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
+
     void* ptr_metal = nullptr;
     size_t ptr_metal_size;
     Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, nullptr);
@@ -239,8 +300,6 @@ int main(int argc, char** argv)
         ERROR("Can not create buffer" << err);
     }
     
-    auto fuzz1 = std::make_shared<Dielectric>(1.5f);
-    auto fuzz2 = std::make_shared<Dielectric>(1.5f);
     void* ptr_fuzz = nullptr;
     size_t ptr_fuzz_size;
     Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, nullptr);
@@ -300,6 +359,8 @@ int main(int argc, char** argv)
 
     std::free(ptr_albedo);
     std::free(ptr_metal);
+    std::free(ptr_fuzz);
+    std::free(ptr_world);
 
     return 0;
 }
