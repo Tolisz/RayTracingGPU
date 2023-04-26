@@ -59,9 +59,6 @@ bool Spheres_World::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table
 
     for (int i = 0; i < spheres.size(); ++i, ++it) {
         *((cl_float3*)*ptr + i) = vec3_to_clfloat3((*it).center);
-        // *((cl_float*)*ptr + offset1 + i) = (*it).radius;
-        // *((cl_int*)*ptr + offset2 + i) = (*it).material->get_material_id();
-        // *((cl_int*)*ptr + offset3 + i) = (*it).material->get_material_num();
         *((cl_float*)((char*)*ptr + offset1) + i) = (*it).radius;
         *((cl_int*)((char*)*ptr + offset2) + i) = (*it).material->get_material_id();
         *((cl_int*)((char*)*ptr + offset3) + i) = (*it).material->get_material_num();

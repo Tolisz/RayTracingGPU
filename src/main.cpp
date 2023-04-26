@@ -16,26 +16,80 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define NUMBER_OF_SPHERES 5
 #define SAMPLES_PER_PIXEL 100
-#define MAX_RECURSION_DEPTH 50
+#define MAX_RECURSION_DEPTH 10
 
 #include "camera.hpp"
-
-// typedef struct __attribute__ ((packed)) _Spheres_World
-// {
-//     cl_float3 center[NUMBER_OF_SPHERES];
-//     cl_float r[NUMBER_OF_SPHERES];
-
-//     cl_int mat_id[NUMBER_OF_SPHERES];       // ID materiału który będzie wykorzystywany
-//     cl_int mat_num[NUMBER_OF_SPHERES];      // Numer materiału w tablicy dla konkretnego ID
-// } 
-// Spheres_World;
-
-
 #include "vec/vec.hpp"
 #include "materials.hpp"
 #include "spheres_world.hpp"
+
+Spheres_World random_scene() {
+
+    Spheres_World world;
+
+    auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    world.add_sphere(vec::vec3(0,-1000,0), 1000, ground_material);
+
+    auto random_float = []() -> float 
+    { 
+        return rand() / (RAND_MAX + 1.0f); 
+    };
+
+    auto random_float_mm = [&random_float](float min, float max) -> float 
+    { 
+        return min + (max-min)*random_float(); 
+    };
+
+    auto random_vec3 = [&random_float]() -> vec::vec3 
+    {
+        return vec::vec3(random_float(), random_float(), random_float()); 
+    }; 
+
+    auto random_vec3_mm = [&random_float_mm](float min, float max) -> vec::vec3 
+    {
+        return vec::vec3(random_float_mm(min, max), random_float_mm(min, max), random_float_mm(min, max)); 
+    }; 
+
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            auto choose_mat = random_float();
+            vec::vec3 center(a + 0.9*random_float(), 0.2, b + 0.9*random_float());
+
+            if ((center - vec::vec3(4, 0.2, 0)).length() > 0.9) {
+                std::shared_ptr<Material> sphere_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = random_vec3() * random_vec3();
+                    sphere_material = std::make_shared<Lambertian>(albedo);
+                    world.add_sphere(center, 0.2, sphere_material);
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = random_vec3_mm(0.5, 1);
+                    auto fuzz = random_float_mm(0, 0.5);
+                    sphere_material = std::make_shared<Metal>(albedo, fuzz);
+                    world.add_sphere(center, 0.2, sphere_material);
+                } else {
+                    // glass
+                    sphere_material = std::make_shared<Dielectric>(1.5);
+                    world.add_sphere(center, 0.2, sphere_material);
+                }
+            }
+        }
+    }
+
+    auto material1 = std::make_shared<Dielectric>(1.5);
+    world.add_sphere(vec::vec3(0, 1, 0), 1.0, material1);
+
+    auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
+    world.add_sphere(vec::vec3(-4, 1, 0), 1.0, material2);
+
+    auto material3 = std::make_shared<Metal>(vec::vec3(0.7, 0.6, 0.5), 0.0);
+    world.add_sphere(vec::vec3(4, 1, 0), 1.0, material3);
+
+    return world;
+}
 
 //  --------------------------------  //
 //                MAIN                //
@@ -48,36 +102,71 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
-    auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
+    // auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
+    // auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
 
-    auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
+    // auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
 
-    auto fuzz1 = std::make_shared<Dielectric>(1.5f);
-    auto fuzz2 = std::make_shared<Dielectric>(1.5f);
+    // auto fuzz1 = std::make_shared<Dielectric>(1.5f);
+    // auto fuzz2 = std::make_shared<Dielectric>(1.5f);
 
 
     // Sfery
 
-    Spheres_World world;
-    world.add_sphere(vec::vec3(0.0f, 0.0f, -1.0f), 0.5f, albedo1);
-    world.add_sphere(vec::vec3(0.0f, -100.5f, -1.0f), 100.0f, albedo2);
+    Spheres_World world = random_scene(); 
+
+    // world.add_sphere(vec::vec3(0.0f, 0.0f, -1.0f), 0.5f, albedo1);
+    // world.add_sphere(vec::vec3(0.0f, -100.5f, -1.0f), 100.0f, albedo2);
     
-    world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), 0.5f, fuzz1);
+    // world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), 0.5f, fuzz1);
 
-    world.add_sphere(vec::vec3(1.0f, 0.0f, -1.0f), 0.5f, metal1);
-    world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), -0.4f, fuzz2);
+    // world.add_sphere(vec::vec3(1.0f, 0.0f, -1.0f), 0.5f, metal1);
+    // world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), -0.4f, fuzz2);
 
+
+    std::cout << "Utworzylem scene" << std::endl;
+
+    // Camera 
+
+    vec::vec3 lookfrom(13,2,3);
+    vec::vec3 lookat(0,0,0);
+    vec::vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.1;
+
+    // Camera class parametrs
+    float aspect_ratio = 9.0f / 16.0f;
+
+    size_t image_width = 1280;
+    size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
     //   WIRTUALNA SCENA (KONIEC)
     // -----------------------------
 
+    // Spheres 
 
     void* ptr_world;
     size_t ptr_world_size;
     size_t ptr_world_table_size;
     world.get_cl_structure(&ptr_world, &ptr_world_size, &ptr_world_table_size);
+
+    //Materials
+
+    void* ptr_albedo = nullptr;
+    size_t ptr_albedo_size;
+    size_t ptr_albedo_table_size;
+    Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, &ptr_albedo_table_size);
+
+    void* ptr_metal = nullptr;
+    size_t ptr_metal_size;
+    size_t ptr_metal_table_size;
+    Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, &ptr_metal_table_size);
+
+    void* ptr_fuzz = nullptr;
+    size_t ptr_fuzz_size;
+    size_t ptr_fuzz_table_size;
+    Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, &ptr_fuzz_table_size);
 
     // size_t offset1 = ptr_world_table_size * (sizeof(cl_float3));
     // size_t offset2 = ptr_world_table_size * (sizeof(cl_float3) + sizeof(cl_float));
@@ -133,6 +222,8 @@ int main(int argc, char** argv)
 
     /* OpenCL program and kelner*/
 
+    std::cout << "Stworzylem konieczne elementy OpenCL do wykorzystania w programie" << std::endl;
+
     std::string program_file = "src_opencl/kelner.cl";
     std::string kelner_name = "ray_tracer";
 
@@ -151,6 +242,9 @@ int main(int argc, char** argv)
 
     std::string build_options = "-I./src_opencl "; 
     build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(ptr_world_table_size); 
+    build_options += " -D NUM_OF_ALBEDO_MATERIALS=" + std::to_string(ptr_albedo_table_size);
+    build_options += " -D NUM_OF_FUZZ_MATERIALS=" + std::to_string(ptr_fuzz_table_size);
+    build_options += " -D NUM_OF_REFLECTANCE_MATERIALS=" + std::to_string(ptr_metal_table_size);
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
@@ -169,6 +263,8 @@ int main(int argc, char** argv)
         exit(1);
     }
 
+    std::cout << "Zbudowalem program" << std::endl;
+
     /* OpenCL kernel */
 
     cl_kernel kernel = clCreateKernel(program, kelner_name.c_str(), &err);
@@ -176,13 +272,9 @@ int main(int argc, char** argv)
         ERROR("Can not create a kelner \"" << kelner_name << "\" err = " << err);
     }
 
+    std::cout << "Stworzylem kelner" << std::endl;
+
     /* Image parametrs and OpenCL image object creation */
-
-    // Camera class parametrs
-    float aspect_ratio = 9.0f / 16.0f;
-
-    size_t image_width = 600;
-    size_t image_height = image_width * aspect_ratio;
 
     cl_image_format image_format;
     image_format.image_channel_order = CL_RGBA;
@@ -211,12 +303,7 @@ int main(int argc, char** argv)
     }
 
     // Camera settings
-    
-    vec::vec3 lookfrom(3,3,2);
-    vec::vec3 lookat(0,0,-1);
-    vec::vec3 vup(0,1,0);
-    auto dist_to_focus = (lookfrom-lookat).length();
-    auto aperture = 0.1;
+
 
     Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus);
 
@@ -233,43 +320,6 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    // Spheres_World test_sphere;
-    // memset(&test_sphere, 0, sizeof(Spheres_World));
-
-    // std::cout << "sieof(Spheres_World) = " << sizeof(Spheres_World) << std::endl;
-    
-    // test_sphere.center[0] = {0.0f, 0.0f, -1.0f};
-    // test_sphere.r[0] = 0.5f;
-    // test_sphere.mat_id[0] = 0;
-    // test_sphere.mat_num[0] = 0;
-
-    // test_sphere.center[1] = {0.0f, -100.5f, -1.0f};
-    // test_sphere.r[1] = 100.0f;
-    // test_sphere.mat_id[1] = 0;
-    // test_sphere.mat_num[1] = 1;
-
-    // test_sphere.center[2] = {-1.0f, 0.0f, -1.0f};
-    // test_sphere.r[2] = 0.5f;
-    // test_sphere.mat_id[2] = 2;
-    // test_sphere.mat_num[2] = 0;
-
-    // test_sphere.center[3] = {1.0f, 0.0f, -1.0f};
-    // test_sphere.r[3] = 0.5f;
-    // test_sphere.mat_id[3] = 1; 
-    // test_sphere.mat_num[3] = 0; 
-
-    // test_sphere.center[4] = {-1.0f, 0.0f, -1.0f};
-    // test_sphere.r[4] = -0.4f;
-    // test_sphere.mat_id[4] = 2;
-    // test_sphere.mat_num[4] = 1;
-
-
-    // cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(Spheres_World), &test_sphere, &err);
-    // if (err < 0) {
-    //     ERROR("Can not create buffer object" << err);
-    // }
-
-    // std::cout << "HOST SIZE" << ptr_world_size << "\n";
     cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_world_size, ptr_world, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
@@ -283,26 +333,18 @@ int main(int argc, char** argv)
     // MATERIAŁY
     // ----------
 
-    void* ptr_albedo = nullptr;
-    size_t ptr_albedo_size;
-    Lambertian_List::get_cl_structure(&ptr_albedo, &ptr_albedo_size, nullptr);
+
     cl_mem albedo_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_albedo_size, ptr_albedo, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
 
-
-    void* ptr_metal = nullptr;
-    size_t ptr_metal_size;
-    Metal_List::get_cl_structure(&ptr_metal, &ptr_metal_size, nullptr);
     cl_mem metal_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_metal_size, ptr_metal, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
     
-    void* ptr_fuzz = nullptr;
-    size_t ptr_fuzz_size;
-    Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, nullptr);
+
     cl_mem fuzz_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_fuzz_size, ptr_fuzz, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
@@ -323,6 +365,8 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
+
+    std::cout << "PUSZCZAM KERNEL" << std::endl;
 
     size_t global_size[2] = {image_height, image_width};
     err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);

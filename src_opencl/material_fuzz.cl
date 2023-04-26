@@ -3,8 +3,8 @@
 
 typedef struct _Material_Fuzz
 {
-    float3 albedo[1];
-    float fuzz[1];
+    float3 albedo[NUM_OF_FUZZ_MATERIALS];
+    float fuzz[NUM_OF_FUZZ_MATERIALS];
 }
 Material_Fuzz;
 
