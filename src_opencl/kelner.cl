@@ -4,6 +4,7 @@
 #include "hit_record.cl"
 
 #include "scatter.cl"
+#include "moving_sphere.cl"
 
 float3 ray_color
 (
@@ -33,7 +34,8 @@ __kernel void ray_tracer
     __global Spheres_World*             spheres_world, 
     __global Material_Albedo*           mat_albedo,
     __global Material_Fuzz*             mat_fuzz,
-    __global Material_Reflectance*      mat_reflectance)
+    __global Material_Reflectance*      mat_reflectance,
+    __global Moving_Sphere*             moving_sphere)
 {
     int i = get_global_id(0);   // height
     int j = get_global_id(1);   // width
@@ -42,7 +44,8 @@ __kernel void ray_tracer
     int w = get_image_width(image);     // width
 
     //To musi pojsc do trybu debagowego
-    
+
+
     // if (i == 0 && j == 0) {
     //     printf("-------------- SPHERES --------------");
         

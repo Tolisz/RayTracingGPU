@@ -16,22 +16,26 @@ typedef struct __attribute__ ((packed)) _Moving_Sphere
 Moving_Sphere;
 
 
-void Moving_Sphere_Debug(Moving_Sphere* ms)
+void Moving_Sphere_Debug(__global Moving_Sphere* ms)
 {
     printf("----------------------------------------\n");
-    printf(" Moving Sphere Debug Info\n")
+    printf(" Moving Sphere Debug Info\n");
     printf("----------------------------------------\n");
 
     for (int i = 0; i < NUM_OF_MOVING_SPHERE; i++) {
-        printf("i = %d", i);
-        printf("c0 = [%f, %f, %f]; c1 = [%f, %f, %f]", 
+        printf("i = %d\n", i);
+        printf("c0 = [%f, %f, %f]; c1 = [%f, %f, %f]\n", 
             ms->center0[i].x, ms->center0[i].y, ms->center0[i].z, 
             ms->center1[i].x, ms->center1[i].y, ms->center1[i].z);
-        printf("t0 = %f; t1 = %f", ms->time0[i], ms->time1[i]);
+        printf("t0 = %f; t1 = %f\n", ms->time0[i], ms->time1[i]);
         printf("mat_id = %4d;  mat_num = %4d\n\n", ms->mat_id[i], ms->mat_num[i]);
     }
 
     printf("----------------------------------------\n\n");
+}
+
+float3 Moving_Sphere_Center(__global Moving_Sphere* ms, float time) {
+    return 
 }
 
 

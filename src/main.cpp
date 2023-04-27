@@ -63,7 +63,9 @@ World random_scene() {
                     // diffuse
                     auto albedo = random_vec3() * random_vec3();
                     sphere_material = std::make_shared<Lambertian>(albedo);
-                    world.add(std::make_shared<Sphere>(center, 0.2, sphere_material));
+                    auto center2 = center + vec::vec3(0, random_float_mm(0.0f,0.5f), 0);
+
+                    world.add(std::make_shared<Moving_Sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = random_vec3_mm(0.5, 1);
@@ -146,10 +148,15 @@ int main(int argc, char** argv)
 
     // Spheres 
 
-    void* ptr_world;
-    size_t ptr_world_size;
-    size_t ptr_world_table_size;
-    Sphere_List::get_cl_structure(&ptr_world, &ptr_world_size, &ptr_world_table_size);
+    void* ptr_spheres;
+    size_t ptr_spheres_size;
+    size_t ptr_spheres_table_size;
+    Sphere_List::get_cl_structure(&ptr_spheres, &ptr_spheres_size, &ptr_spheres_table_size);
+
+    void* ptr_moving_spheres;
+    size_t ptr_moving_spheres_size;
+    size_t ptr_moving_spheres_table_size;
+    Moving_Sphere_List::get_cl_structure(&ptr_moving_spheres, &ptr_moving_spheres_size, &ptr_moving_spheres_table_size);
 
     //Materials
 
@@ -168,25 +175,9 @@ int main(int argc, char** argv)
     size_t ptr_fuzz_table_size;
     Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, &ptr_fuzz_table_size);
 
-    // size_t offset1 = ptr_world_table_size * (sizeof(cl_float3));
-    // size_t offset2 = ptr_world_table_size * (sizeof(cl_float3) + sizeof(cl_float));
-    // size_t offset3 = ptr_world_table_size * (sizeof(cl_float3) + sizeof(cl_float) + sizeof(cl_int));
+
+
     
-    // std::cout << offset1 << "\n" << offset2 << "\n" << offset3 << std::endl << std::endl;
-
-    // for (int i = 0; i < ptr_world_table_size; i++) {
-    //     std::cout << "Sfera nr " << i << std::endl;
-
-    //     for (int j = 0; j < 4; j++) {
-    //         std::cout << *((cl_float*)ptr_world + 4*i + j) << " ";
-    //     }
-
-    //     std::cout << "\nr = " << *((cl_float*)((char*)ptr_world + offset1) + i) << std::endl;
-    //     std::cout << "mat_id = " << *((cl_int*)((char*)ptr_world + offset2) + i)  << std::endl;
-    //     std::cout << "mat_num = " << *((cl_int*)((char*)ptr_world + offset3) + i)  << std::endl << std::endl;
-    // }
-
-
     
     cl_int err;
 
@@ -241,10 +232,11 @@ int main(int argc, char** argv)
     free(program_buffer);
 
     std::string build_options = "-I./src_opencl "; 
-    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(ptr_world_table_size); 
+    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(ptr_spheres_table_size); 
     build_options += " -D NUM_OF_ALBEDO_MATERIALS=" + std::to_string(ptr_albedo_table_size);
     build_options += " -D NUM_OF_FUZZ_MATERIALS=" + std::to_string(ptr_fuzz_table_size);
     build_options += " -D NUM_OF_REFLECTANCE_MATERIALS=" + std::to_string(ptr_metal_table_size);
+    build_options += " -D NUM_OF_MOVING_SPHERE=" + std::to_string(ptr_moving_spheres_table_size);
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
@@ -305,7 +297,7 @@ int main(int argc, char** argv)
     // Camera settings
 
 
-    Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus);
+    Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus, 0.0f, 1.0f);
 
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
@@ -320,7 +312,7 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_world_size, ptr_world, &err);
+    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_spheres_size, ptr_spheres, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
@@ -365,6 +357,18 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
+    // Moving Spheres
+
+    cl_mem moving_s = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_moving_spheres_size, ptr_moving_spheres, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer object" << err);
+    }
+
+    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &moving_s);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+
 
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 
@@ -404,7 +408,8 @@ int main(int argc, char** argv)
     std::free(ptr_albedo);
     std::free(ptr_metal);
     std::free(ptr_fuzz);
-    std::free(ptr_world);
+    std::free(ptr_spheres);
+    std::free(ptr_moving_spheres);
 
     return 0;
 }
