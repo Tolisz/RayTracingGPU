@@ -24,12 +24,12 @@
 #include "materials.hpp"
 #include "spheres_world.hpp"
 
-Spheres_World random_scene() {
+World random_scene() {
 
-    Spheres_World world;
+    World world;
 
     auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
-    world.add_sphere(vec::vec3(0,-1000,0), 1000, ground_material);
+    world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
 
     auto random_float = []() -> float 
     { 
@@ -63,30 +63,30 @@ Spheres_World random_scene() {
                     // diffuse
                     auto albedo = random_vec3() * random_vec3();
                     sphere_material = std::make_shared<Lambertian>(albedo);
-                    world.add_sphere(center, 0.2, sphere_material);
+                    world.add(std::make_shared<Sphere>(center, 0.2, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = random_vec3_mm(0.5, 1);
                     auto fuzz = random_float_mm(0, 0.5);
                     sphere_material = std::make_shared<Metal>(albedo, fuzz);
-                    world.add_sphere(center, 0.2, sphere_material);
+                    world.add(std::make_shared<Sphere>(center, 0.2, sphere_material));
                 } else {
                     // glass
                     sphere_material = std::make_shared<Dielectric>(1.5);
-                    world.add_sphere(center, 0.2, sphere_material);
+                    world.add(std::make_shared<Sphere>(center, 0.2, sphere_material));
                 }
             }
         }
     }
 
     auto material1 = std::make_shared<Dielectric>(1.5);
-    world.add_sphere(vec::vec3(0, 1, 0), 1.0, material1);
+    world.add(std::make_shared<Sphere>(vec::vec3(0, 1, 0), 1.0, material1));
 
     auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
-    world.add_sphere(vec::vec3(-4, 1, 0), 1.0, material2);
+    world.add(std::make_shared<Sphere>(vec::vec3(-4, 1, 0), 1.0, material2));
 
     auto material3 = std::make_shared<Metal>(vec::vec3(0.7, 0.6, 0.5), 0.0);
-    world.add_sphere(vec::vec3(4, 1, 0), 1.0, material3);
+    world.add(std::make_shared<Sphere>(vec::vec3(4, 1, 0), 1.0, material3));
 
     return world;
 }
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
 
     // Sfery
 
-    Spheres_World world = random_scene(); 
+    World world = random_scene(); 
 
     // world.add_sphere(vec::vec3(0.0f, 0.0f, -1.0f), 0.5f, albedo1);
     // world.add_sphere(vec::vec3(0.0f, -100.5f, -1.0f), 100.0f, albedo2);
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 1280;
+    size_t image_width = 400;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     void* ptr_world;
     size_t ptr_world_size;
     size_t ptr_world_table_size;
-    world.get_cl_structure(&ptr_world, &ptr_world_size, &ptr_world_table_size);
+    Sphere_List::get_cl_structure(&ptr_world, &ptr_world_size, &ptr_world_table_size);
 
     //Materials
 

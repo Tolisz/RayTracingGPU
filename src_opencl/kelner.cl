@@ -5,7 +5,6 @@
 
 #include "scatter.cl"
 
-
 float3 ray_color
 (
     __global Spheres_World*           spheres_world,

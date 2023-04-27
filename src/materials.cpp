@@ -157,6 +157,7 @@ bool Dielectric_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* tab
 
     auto it = dielec_list.cbegin();
     for(int i = 0; i < dielec_list.size(); i++) {
+        // reflection_index[i]
         *((cl_float*)*ptr + i) = (*it)->reflection_index;
     }
 

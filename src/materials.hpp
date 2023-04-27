@@ -4,6 +4,8 @@
 #include <list>
 #include <memory>
 
+#include <iostream>
+
 class Material 
 {
 public:
@@ -12,7 +14,7 @@ public:
 };
 
 
-
+// UWAGA: PROBLEM JEŚLI MATERIAŁ NIE JEST WYKORZYSTYWANY !!!!!!!!!!!
 
 
 
@@ -63,6 +65,7 @@ public:
 
     virtual size_t get_material_id() const noexcept override { return mat_id; }
     virtual size_t get_material_num() const noexcept override { return mat_num; }
+
 
 private:
 

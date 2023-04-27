@@ -1,5 +1,6 @@
 #include "camera.hpp"
 
+#include "random.hpp"
 
 Camera::Camera(
     vec::vec3 lookfrom,
@@ -8,8 +9,12 @@ Camera::Camera(
     double vfov, // vertical field-of-view in degrees
     double aspect_ratio,
     double aperture,
-    double focus_dist
-) {
+    double focus_dist,
+    double _time0,
+    double _time1
+)  
+    : _time0{_time0}, _time1{_time1}
+{
     double theta = vec::degree_to_radians(vfov);
     double h = std::tan(theta / 2);
     double viewport_height = 2.0 * h;
@@ -25,6 +30,7 @@ Camera::Camera(
     lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist * w;
 
     lens_radius = aperture / 2;
+
 }
 
 void Camera::get_cl_structure(CL_Camera* pointer) 
@@ -44,4 +50,7 @@ void Camera::get_cl_structure(CL_Camera* pointer)
     pointer->w = vec3_to_clfloat3(w);
     
     pointer->lens_radius = static_cast<cl_float>(lens_radius);
+
+    pointer->time0 = _time0;
+    pointer->time1 = _time1;
 }

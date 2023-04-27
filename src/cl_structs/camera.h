@@ -16,5 +16,7 @@ typedef struct _CL_Camera
     cl_float3 vertical;
     cl_float3 u, v, w;
     cl_float lens_radius;
+    cl_float time0;
+    cl_float time1;
 } 
 CL_Camera;

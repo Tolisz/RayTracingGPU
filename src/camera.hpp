@@ -14,7 +14,9 @@ public:
         double vfov, // vertical field-of-view in degrees
         double aspect_ratio,
         double aperture,
-        double focus_dist
+        double focus_dist,
+        double _time0 = 0,
+        double _time1 = 0
     );
 
     void get_cl_structure(CL_Camera* pointer);
@@ -27,4 +29,6 @@ private:
     vec::vec3 vertical;
     vec::vec3 u, v, w;
     double lens_radius;
+    double _time0;
+    double _time1;
 };

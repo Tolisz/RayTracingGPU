@@ -7,36 +7,84 @@
 #include "materials.hpp"
 
 
+class Object 
+{
 
-class Spheres_World
+};
+
+class World: public Object 
 {
 public:
 
-    Spheres_World();
-    Spheres_World(const Spheres_World&) = default;
-    Spheres_World(Spheres_World&&) = default;
+    void add(std::shared_ptr<Object> obj);
 
-    void add_sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material);
+    std::list<std::shared_ptr<Object>> objects;
+};
 
-    bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size);
+
+class Sphere: public Object
+{
+public:
+
+    Sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material);
+    Sphere(const Sphere&) = default;
+    Sphere(Sphere&&) = default;
+
+public:
+
+    vec::vec3 center;
+    float radius;
+    std::shared_ptr<Material> material;
+};
+
+
+class Sphere_List 
+{
+    friend Sphere;
+
+public:
+
+    static bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size);
 
 private:
 
-    class Sphere 
-    {
-    public:
-
-        Sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material);
-        Sphere(const Sphere&) = default;
-        Sphere(Sphere&&) = default;
-
-    public:
-
-        vec::vec3 center;
-        float radius;
-        std::shared_ptr<Material> material;
-    };
-
-    std::list<Sphere> spheres;
+    static std::list<Sphere*> spheres;
 };
 
+
+
+
+
+class Moving_Sphere: public Object 
+{
+public:
+
+    Moving_Sphere(
+        vec::vec3 center0, 
+        vec::vec3 center1, 
+        float time0, 
+        float time1, 
+        float radius, 
+        std::shared_ptr<Material> material);
+
+public:
+
+    vec::vec3 center0, center1;
+    float time0, time1;
+    float radius;
+    std::shared_ptr<Material> material;
+};
+
+
+class Moving_Sphere_List
+{
+    friend Moving_Sphere;
+
+public:
+
+    static bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size);
+
+private:
+
+    static std::list<Moving_Sphere*> moving_spheres;
+};
