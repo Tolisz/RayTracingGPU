@@ -18,11 +18,36 @@ void World::add(std::shared_ptr<Object> obj)
     objects.push_back(obj);
 }
 
+bool World::bounding_box(double time0, double time1, AABB& output_box) const
+{
+    if (objects.empty()) 
+        return false;
+
+    AABB temp_box;
+    bool is_first_box = true;
+
+    for(const auto& obj : objects) {
+        if (!obj->bounding_box(time0, time1, temp_box))
+            return false;
+        
+        output_box = is_first_box ? temp_box : AABB::surrounding_box(output_box, temp_box);
+        is_first_box = false;
+    }
+
+    return true;
+}
+
 
 Sphere::Sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material)
     : center{center}, radius{radius}, material{material}
 {    
     Sphere_List::spheres.push_back(this);
+}
+
+bool Sphere::bounding_box(double time0, double time1, AABB& output_box) const
+{
+    output_box = AABB(center - vec::vec3{radius, radius, radius}, center + vec::vec3{radius, radius, radius});
+    return true;
 }
 
 std::list<Sphere*> Sphere_List::spheres;
@@ -86,9 +111,24 @@ Moving_Sphere::Moving_Sphere(
     float time1, 
     float radius, 
     std::shared_ptr<Material> material)
-: center0{center0}, center1{center1}, time0{time0}, time1{time1}, radius{radius}, material{material}
+: 
+    center0{center0}, 
+    center1{center1}, 
+    time0{time0}, 
+    time1{time1}, 
+    radius{radius}, 
+    material{material}
 {
     Moving_Sphere_List::moving_spheres.push_back(this);
+}
+
+bool Moving_Sphere::bounding_box(double time0, double time1, AABB& output_box) const 
+{
+    AABB box0(center0 - vec::vec3{radius, radius, radius}, center0 + vec::vec3{radius, radius, radius});
+    AABB box1(center1 - vec::vec3{radius, radius, radius}, center1 + vec::vec3{radius, radius, radius});
+
+    output_box = AABB::surrounding_box(box0, box1);
+    return true;
 }
 
 bool Moving_Sphere_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size)

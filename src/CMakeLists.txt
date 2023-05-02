@@ -3,6 +3,9 @@ add_executable(rt_gpu
     camera.cpp
     spheres_world.cpp
     materials.cpp
+    aabb.cpp
+    random.cpp
+    BVH_tree.cpp
 )
 
 target_link_libraries(rt_gpu OpenCL)

@@ -6,10 +6,13 @@
 #include "vec/vec.hpp"
 #include "materials.hpp"
 
+#include "aabb.hpp"
 
 class Object 
 {
+public:
 
+    virtual bool bounding_box(double time0, double time1, AABB& output_box) const = 0;
 };
 
 class World: public Object 
@@ -17,6 +20,8 @@ class World: public Object
 public:
 
     void add(std::shared_ptr<Object> obj);
+
+    virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
 
     std::list<std::shared_ptr<Object>> objects;
 };
@@ -29,6 +34,8 @@ public:
     Sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material);
     Sphere(const Sphere&) = default;
     Sphere(Sphere&&) = default;
+
+    virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
 
 public:
 
@@ -66,6 +73,8 @@ public:
         float time1, 
         float radius, 
         std::shared_ptr<Material> material);
+
+    virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
 
 public:
 

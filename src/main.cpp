@@ -23,6 +23,8 @@
 #include "vec/vec.hpp"
 #include "materials.hpp"
 #include "spheres_world.hpp"
+#include "random.hpp"
+#include "BVH_tree.hpp"
 
 World random_scene() {
 
@@ -31,24 +33,14 @@ World random_scene() {
     auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
     world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
 
-    auto random_float = []() -> float 
-    { 
-        return rand() / (RAND_MAX + 1.0f); 
-    };
-
-    auto random_float_mm = [&random_float](float min, float max) -> float 
-    { 
-        return min + (max-min)*random_float(); 
-    };
-
-    auto random_vec3 = [&random_float]() -> vec::vec3 
+    auto random_vec3 = []() -> vec::vec3 
     {
         return vec::vec3(random_float(), random_float(), random_float()); 
     }; 
 
-    auto random_vec3_mm = [&random_float_mm](float min, float max) -> vec::vec3 
+    auto random_vec3_mm = [](float min, float max) -> vec::vec3 
     {
-        return vec::vec3(random_float_mm(min, max), random_float_mm(min, max), random_float_mm(min, max)); 
+        return vec::vec3(random_float(min, max), random_float(min, max), random_float(min, max)); 
     }; 
 
     for (int a = -11; a < 11; a++) {
@@ -63,13 +55,13 @@ World random_scene() {
                     // diffuse
                     auto albedo = random_vec3() * random_vec3();
                     sphere_material = std::make_shared<Lambertian>(albedo);
-                    auto center2 = center + vec::vec3(0, random_float_mm(0.0f,0.5f), 0);
+                    auto center2 = center + vec::vec3(0, random_float(0.0f,0.5f), 0);
 
                     world.add(std::make_shared<Moving_Sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = random_vec3_mm(0.5, 1);
-                    auto fuzz = random_float_mm(0, 0.5);
+                    auto fuzz = random_float(0, 0.5);
                     sphere_material = std::make_shared<Metal>(albedo, fuzz);
                     world.add(std::make_shared<Sphere>(center, 0.2, sphere_material));
                 } else {
@@ -104,26 +96,13 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    // auto albedo1 = std::make_shared<Lambertian>(vec::vec3(0.7f, 0.3f, 0.3f));
-    // auto albedo2 = std::make_shared<Lambertian>(vec::vec3(0.8f, 0.8f, 0.8f));
-
-    // auto metal1 = std::make_shared<Metal>(vec::vec3(0.8f, 0.6f, 0.2f), 0.4f);
-
-    // auto fuzz1 = std::make_shared<Dielectric>(1.5f);
-    // auto fuzz2 = std::make_shared<Dielectric>(1.5f);
-
-
-    // Sfery
-
     World world = random_scene(); 
 
-    // world.add_sphere(vec::vec3(0.0f, 0.0f, -1.0f), 0.5f, albedo1);
-    // world.add_sphere(vec::vec3(0.0f, -100.5f, -1.0f), 100.0f, albedo2);
-    
-    // world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), 0.5f, fuzz1);
+    std::vector<std::shared_ptr<Object>> test_vector(world.objects.begin(), world.objects.end());
 
-    // world.add_sphere(vec::vec3(1.0f, 0.0f, -1.0f), 0.5f, metal1);
-    // world.add_sphere(vec::vec3(-1.0f, 0.0f, -1.0f), -0.4f, fuzz2);
+    std::cout << "Robie drzewo" << std::endl;
+
+    BVH_tree tree(test_vector, 0.0f, 1.0f);
 
 
     std::cout << "Utworzylem scene" << std::endl;
@@ -139,7 +118,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 1020;
+    size_t image_width = 400;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------

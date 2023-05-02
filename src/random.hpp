@@ -4,3 +4,4 @@
 
 float random_float();
 float random_float(const float& min, const float& max);
+int random_int(const int& min, const int& max);
