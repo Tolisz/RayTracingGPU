@@ -9,6 +9,7 @@
 float3 ray_color
 (
     __global Spheres_World*           spheres_world,
+    __global Moving_Sphere*           moving_sphere,
     __global Material_Albedo*         mat_albedo,
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
@@ -20,6 +21,16 @@ void write_color
 (
     write_only image2d_t image, 
     float3 color
+);
+
+bool world_hit
+(
+    __global Spheres_World* spheres_world, 
+    __global Moving_Sphere* moving_sphere,
+    Ray* ray, 
+    float t_min,
+    float t_max,
+    Hit_Record* rec
 );
 
 
@@ -73,7 +84,7 @@ __kernel void ray_tracer
 
         // Ray
         Ray ray = camera_get_ray(cam, &rng, u, v);
-        color += ray_color(spheres_world, mat_albedo, mat_fuzz, mat_reflectance, &ray, &rng);
+        color += ray_color(spheres_world, moving_sphere, mat_albedo, mat_fuzz, mat_reflectance, &ray, &rng);
     }
 
     write_color(image, color);
@@ -88,6 +99,7 @@ __kernel void ray_tracer
 float3 ray_color
 (
     __global Spheres_World*           spheres_world,
+    __global Moving_Sphere*           moving_sphere,
     __global Material_Albedo*         mat_albedo,
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
@@ -103,7 +115,7 @@ float3 ray_color
             return (float3)(0.0f, 0.0f, 0.0f);
         }
 
-        if (spheres_world_hit(spheres_world, ray, 0.001f, FLT_MAX, &rec)) {
+        if (world_hit(spheres_world, moving_sphere, ray, 0.001f, FLT_MAX, &rec)) {
             float3 attenuation;
             Ray scattered;
 
@@ -115,6 +127,7 @@ float3 ray_color
                     if (scatter_lambertian(mat_albedo, ray, &rec, &attenuation, &scattered, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
+                        //ray->time = scattered.time;
                         end_attenuation *= attenuation;
                     }
                     else  {
@@ -129,6 +142,7 @@ float3 ray_color
                     if (scatter_metal(mat_fuzz, ray, &rec, &attenuation, &scattered, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
+                        //ray->time = scattered.time;
                         end_attenuation *= attenuation;
                     } else {
                         return (float3)(0.0f, 0.0f, 0.0f);
@@ -140,6 +154,7 @@ float3 ray_color
                     if (scatter_dielectric(mat_reflectance, ray, &rec, &attenuation, &scattered, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
+                        //ray->time = scattered.time;
                         end_attenuation *= attenuation;
                     } else {
                         return (float3)(0.0f, 0.0f, 0.0f);
@@ -177,4 +192,45 @@ void write_color
         clamp(color.z, 0.0f, 0.9999f) * 256, 256);
     
     write_imageui(image, PixelPos, PixelColor);
+}
+
+
+bool world_hit
+(
+    __global Spheres_World* spheres_world, 
+    __global Moving_Sphere* moving_sphere,
+    Ray* ray, 
+    float t_min,
+    float t_max,
+    Hit_Record* rec
+)
+{   
+    Hit_Record temp_rec;
+    bool hit_anithing = false;
+    float t_nearest = t_max;
+
+    for (int i = 0; i < NUMBER_OF_SPHERES; i++)
+    {
+        Sphere sphere = sphere_world_get_sphere(spheres_world, i);
+        if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
+            hit_anithing = true;
+            t_nearest = temp_rec.t;
+            temp_rec.mat_id = sphere.mat_id;
+            temp_rec.mat_num = sphere.mat_num;
+            *rec = temp_rec;
+        }
+    }
+
+    for (int i = 0; i < NUM_OF_MOVING_SPHERE; i++)
+    {
+        if (moving_sphere_hit(moving_sphere, i, ray, t_min, t_nearest, &temp_rec)) {
+            hit_anithing = true;
+            t_nearest = temp_rec.t;
+            temp_rec.mat_id = moving_sphere->mat_id[i];
+            temp_rec.mat_num = moving_sphere->mat_num[i];
+            *rec = temp_rec;
+        }
+    }
+
+    return hit_anithing;
 }

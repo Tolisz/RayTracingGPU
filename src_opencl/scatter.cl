@@ -23,6 +23,7 @@ bool scatter_lambertian(
     
     scattered->origin = rec->p;
     scattered->direction = scatter_direction;
+    scattered->time = r_in->time;
 
     *attenuation = materials->albedo[rec->mat_num];
 
@@ -38,6 +39,7 @@ bool scatter_metal(
 
     scattered->origin = rec->p;
     scattered->direction = reflected + materials->fuzz[rec->mat_num] * random_in_unit_sphere(rng);
+    scattered->time = r_in->time;
 
     *attenuation = materials->albedo[rec->mat_num];
 
@@ -67,6 +69,7 @@ bool scatter_dielectric(
 
     scattered->origin = rec->p;
     scattered->direction = direction;
+    scattered->time = r_in->time;
 
     return true;
 }

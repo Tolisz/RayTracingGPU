@@ -70,28 +70,5 @@ Sphere sphere_world_get_sphere(__global Spheres_World* spheres_world, int i)
     return sphere;
 }
 
-bool spheres_world_hit(__global Spheres_World* spheres_world, Ray* ray, float t_min, float t_max, Hit_Record* rec)
-{   
-    Hit_Record temp_rec;
-    bool hit_anithing = false;
-    float t_nearest = t_max;
-
-    for (int i = 0; i < NUMBER_OF_SPHERES; i++)
-    {
-        Sphere sphere = sphere_world_get_sphere(spheres_world, i);
-        if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
-            hit_anithing = true;
-            t_nearest = temp_rec.t;
-            temp_rec.mat_id = sphere.mat_id;
-            temp_rec.mat_num = sphere.mat_num;
-            *rec = temp_rec;
-        }
-    }
-
-    return hit_anithing;
-}
-
-
-
 
 #endif
