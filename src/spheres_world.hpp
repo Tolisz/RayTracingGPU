@@ -13,6 +13,8 @@ class Object
 public:
 
     virtual bool bounding_box(double time0, double time1, AABB& output_box) const = 0;
+    virtual int get_object_id() const noexcept = 0;
+    virtual int get_object_num() const noexcept = 0;
 };
 
 class World: public Object 
@@ -22,6 +24,8 @@ public:
     void add(std::shared_ptr<Object> obj);
 
     virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
+    virtual int get_object_id() const noexcept override;
+    virtual int get_object_num() const noexcept override;
 
     std::list<std::shared_ptr<Object>> objects;
 };
@@ -36,6 +40,14 @@ public:
     Sphere(Sphere&&) = default;
 
     virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
+    virtual int get_object_id() const noexcept override;
+    virtual int get_object_num() const noexcept override;
+
+private:
+
+    static size_t   count;
+    const size_t    obj_id = 0;
+    size_t          obj_num; 
 
 public:
 
@@ -75,6 +87,14 @@ public:
         std::shared_ptr<Material> material);
 
     virtual bool bounding_box(double time0, double time1, AABB& output_box) const override;
+    virtual int get_object_id() const noexcept override;
+    virtual int get_object_num() const noexcept override;
+
+private:
+
+    static size_t   count;
+    const size_t    obj_id = 1;
+    size_t          obj_num; 
 
 public:
 

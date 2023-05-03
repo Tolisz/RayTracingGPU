@@ -37,9 +37,21 @@ bool World::bounding_box(double time0, double time1, AABB& output_box) const
     return true;
 }
 
+int World::get_object_id() const noexcept
+{
+    return -1;
+}
+int World::get_object_num() const noexcept
+{
+    return -1;
+}
+
+
+
+size_t Sphere::count = 0;
 
 Sphere::Sphere(vec::vec3 center, float radius, std::shared_ptr<Material> material)
-    : center{center}, radius{radius}, material{material}
+    : center{center}, radius{radius}, material{material}, obj_num{count++}
 {    
     Sphere_List::spheres.push_back(this);
 }
@@ -48,6 +60,16 @@ bool Sphere::bounding_box(double time0, double time1, AABB& output_box) const
 {
     output_box = AABB(center - vec::vec3{radius, radius, radius}, center + vec::vec3{radius, radius, radius});
     return true;
+}
+
+int Sphere::get_object_id() const noexcept
+{
+    return obj_id;
+}
+
+int Sphere::get_object_num() const noexcept
+{
+    return obj_num;
 }
 
 std::list<Sphere*> Sphere_List::spheres;
@@ -102,7 +124,8 @@ bool Sphere_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_s
 
 
 
-std::list<Moving_Sphere*> Moving_Sphere_List::moving_spheres;
+
+size_t Moving_Sphere::count = 0;
 
 Moving_Sphere::Moving_Sphere(
     vec::vec3 center0,
@@ -117,7 +140,8 @@ Moving_Sphere::Moving_Sphere(
     time0{time0}, 
     time1{time1}, 
     radius{radius}, 
-    material{material}
+    material{material},
+    obj_num{count++}
 {
     Moving_Sphere_List::moving_spheres.push_back(this);
 }
@@ -130,6 +154,18 @@ bool Moving_Sphere::bounding_box(double time0, double time1, AABB& output_box) c
     output_box = AABB::surrounding_box(box0, box1);
     return true;
 }
+
+int Moving_Sphere::get_object_id() const noexcept
+{
+    return obj_id;
+}
+
+int Moving_Sphere::get_object_num() const noexcept
+{
+    return obj_num;
+}
+
+std::list<Moving_Sphere*> Moving_Sphere_List::moving_spheres;
 
 bool Moving_Sphere_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size)
 {

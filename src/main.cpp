@@ -98,12 +98,6 @@ int main(int argc, char** argv)
 
     World world = random_scene(); 
 
-    std::vector<std::shared_ptr<Object>> test_vector(world.objects.begin(), world.objects.end());
-
-    std::cout << "Robie drzewo" << std::endl;
-
-    BVH_tree tree(test_vector, 0.0f, 1.0f);
-
 
     std::cout << "Utworzylem scene" << std::endl;
 
@@ -155,7 +149,15 @@ int main(int argc, char** argv)
     Dielectric_List::get_cl_structure(&ptr_fuzz, &ptr_fuzz_size, &ptr_fuzz_table_size);
 
 
+    std::vector<std::shared_ptr<Object>> test_vector(world.objects.begin(), world.objects.end());
+    std::cout << "Robie drzewo" << std::endl;
+    BVH_tree tree(test_vector, 0.0f, 1.0f);
 
+    void* ptr_BVH = nullptr;
+    size_t ptr_BVH_size;
+    size_t ptr_BVH_table_size;
+
+    tree.get_cl_structure(&ptr_BVH, &ptr_BVH_size, &ptr_BVH_table_size);
     
     
     cl_int err;
