@@ -5,6 +5,7 @@
 
 #include "scatter.cl"
 #include "moving_sphere.cl"
+#include "BVH.cl"
 
 float3 ray_color
 (
@@ -46,7 +47,8 @@ __kernel void ray_tracer
     __global Material_Albedo*           mat_albedo,
     __global Material_Fuzz*             mat_fuzz,
     __global Material_Reflectance*      mat_reflectance,
-    __global Moving_Sphere*             moving_sphere)
+    __global Moving_Sphere*             moving_sphere, 
+    __global BVH_tree*                  bvh_tree)
 {
     int i = get_global_id(0);   // height
     int j = get_global_id(1);   // width
@@ -69,7 +71,9 @@ __kernel void ray_tracer
     //     }
     // }
 
-
+    if (i == 0 && j == 0) {
+        bvh_tree_debug(bvh_tree);
+    }
 
     // Random number generator
     mwc64x_state_t rng;

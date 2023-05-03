@@ -220,6 +220,7 @@ int main(int argc, char** argv)
     build_options += " -D NUM_OF_MOVING_SPHERE=" + std::to_string(ptr_moving_spheres_table_size);
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
+    build_options += " -D NUM_OF_BVH=" + std::to_string(ptr_BVH_table_size);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
@@ -350,6 +351,16 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
+    // BVH
+    cl_mem BVH_kernel_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_BVH_size, ptr_BVH, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer object" << err);
+    }
+
+    err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &BVH_kernel_mem);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
 
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 

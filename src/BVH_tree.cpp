@@ -156,24 +156,33 @@ bool BVH_tree::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size
 
     Stack.push(std::make_pair(root, num++));
 
-    // while (!Stack.empty()) {
-    //     stack_element elem = Stack.top();
-    //     Stack.pop();
+    while (!Stack.empty()) {
+        stack_element elem = Stack.top();
+        Stack.pop();
 
-    //     uint id = elem.second;
+        uint idx = elem.second;
 
-    //     set_min(elem.first->box.minimum, id);
-    //     set_max(elem.first->box.maximum, id);
-        
+        set_min(elem.first->box.minimum, idx);
+        set_max(elem.first->box.maximum, idx);
 
-    //     if (elem.first->right && elem.first->left) {
-    //         Stack.push(std::make_pair(elem.first->left, num++));            
-    //         Stack.push(std::make_pair(elem.first->right, num++));
-    //     }
-    //     else {
-
-    //     }
-    // }
+        if (elem.first->right && elem.first->left) {
+            set_left(num, idx);
+            Stack.push(std::make_pair(elem.first->left, num++));
+            
+            set_right(num, idx);
+            Stack.push(std::make_pair(elem.first->right, num++));
+            
+            set_obj_id(elem.first->get_object_id(), idx);
+            set_obj_num(elem.first->get_object_num(), idx);
+        }
+        else {
+            set_left(-1, idx);
+            set_right(-1, idx);
+            
+            set_obj_id(elem.first->obj->get_object_id(), idx);
+            set_obj_num(elem.first->obj->get_object_num(), idx);
+        }
+    }
 
     return true;
 }
