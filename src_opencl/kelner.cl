@@ -11,6 +11,7 @@ float3 ray_color
 (
     __global Spheres_World*           spheres_world,
     __global Moving_Sphere*           moving_sphere,
+    __global BVH_tree*                bvh_tree,
     __global Material_Albedo*         mat_albedo,
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
@@ -28,12 +29,23 @@ bool world_hit
 (
     __global Spheres_World* spheres_world, 
     __global Moving_Sphere* moving_sphere,
+    __global BVH_tree*      bvh_tree, 
     Ray* ray, 
     float t_min,
     float t_max,
     Hit_Record* rec
 );
 
+bool bvh_tree_hit
+(
+    __global BVH_tree* bvh,
+    __global Spheres_World* sw, 
+    __global Moving_Sphere* ms,
+    Ray* ray, 
+    float t_min, 
+    float t_max, 
+    Hit_Record* rec
+);
 
 /// ---------------------------------- ///
 ///            MAIN KELNER             ///
@@ -56,24 +68,9 @@ __kernel void ray_tracer
     int h = get_image_height(image);    // height
     int w = get_image_width(image);     // width
 
-    //To musi pojsc do trybu debagowego
-
-
     // if (i == 0 && j == 0) {
-    //     printf("-------------- SPHERES --------------");
-        
-    //     for (int k = 0; k < NUMBER_OF_SPHERES; k++) {
-    //         printf("k = %d\n", k);
-    //         printf("c = [%f, %f, %f]\n", spheres_world->c[k].x, spheres_world->c[k].y, spheres_world->c[k].z);
-    //         printf("r = %f\n", spheres_world->r[k]);
-    //         printf("mat_id = %d\n", spheres_world->mat_id[k]);
-    //         printf("mat_num = %d\n\n", spheres_world->mat_num[k]);
-    //     }
+    //     bvh_tree_debug(bvh_tree);
     // }
-
-    if (i == 0 && j == 0) {
-        bvh_tree_debug(bvh_tree);
-    }
 
     // Random number generator
     mwc64x_state_t rng;
@@ -88,7 +85,7 @@ __kernel void ray_tracer
 
         // Ray
         Ray ray = camera_get_ray(cam, &rng, u, v);
-        color += ray_color(spheres_world, moving_sphere, mat_albedo, mat_fuzz, mat_reflectance, &ray, &rng);
+        color += ray_color(spheres_world, moving_sphere, bvh_tree, mat_albedo, mat_fuzz, mat_reflectance, &ray, &rng);
     }
 
     write_color(image, color);
@@ -104,6 +101,7 @@ float3 ray_color
 (
     __global Spheres_World*           spheres_world,
     __global Moving_Sphere*           moving_sphere,
+    __global BVH_tree*                bvh_tree,
     __global Material_Albedo*         mat_albedo,
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
@@ -119,7 +117,7 @@ float3 ray_color
             return (float3)(0.0f, 0.0f, 0.0f);
         }
 
-        if (world_hit(spheres_world, moving_sphere, ray, 0.001f, FLT_MAX, &rec)) {
+        if (world_hit(spheres_world, moving_sphere, bvh_tree, ray, 0.001f, FLT_MAX, &rec)) {
             float3 attenuation;
             Ray scattered;
 
@@ -203,36 +201,152 @@ bool world_hit
 (
     __global Spheres_World* spheres_world, 
     __global Moving_Sphere* moving_sphere,
+    __global BVH_tree*      bvh_tree,
     Ray* ray, 
     float t_min,
     float t_max,
     Hit_Record* rec
 )
 {   
+
+    // Turn on/off BVH tree structure
+    if (true)
+    {
+        Hit_Record temp_rec;
+        bool hit_anithing = false;
+        float t_nearest = t_max;
+
+        for (int i = 0; i < NUMBER_OF_SPHERES; i++)
+        {
+            Sphere sphere = sphere_world_get_sphere(spheres_world, i);
+            if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
+                hit_anithing = true;
+                t_nearest = temp_rec.t;
+                temp_rec.mat_id = sphere.mat_id;
+                temp_rec.mat_num = sphere.mat_num;
+                *rec = temp_rec;
+            }
+        }
+
+        for (int i = 0; i < NUM_OF_MOVING_SPHERE; i++)
+        {
+            if (moving_sphere_hit(moving_sphere, i, ray, t_min, t_nearest, &temp_rec)) {
+                hit_anithing = true;
+                t_nearest = temp_rec.t;
+                temp_rec.mat_id = moving_sphere->mat_id[i];
+                temp_rec.mat_num = moving_sphere->mat_num[i];
+                *rec = temp_rec;
+            }
+        }
+        
+        return hit_anithing;
+    }
+    else {
+        return bvh_tree_hit(bvh_tree, spheres_world, moving_sphere, ray, t_min, t_max, rec);
+    }
+}
+
+bool bvh_tree_hit
+(
+    __global BVH_tree* bvh,
+    __global Spheres_World* spheres_world, 
+    __global Moving_Sphere* moving_sphere,
+    Ray* ray, 
+    float t_min, 
+    float t_max, 
+    Hit_Record* rec
+)
+{
     Hit_Record temp_rec;
     bool hit_anithing = false;
     float t_nearest = t_max;
 
-    for (int i = 0; i < NUMBER_OF_SPHERES; i++)
-    {
-        Sphere sphere = sphere_world_get_sphere(spheres_world, i);
-        if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
-            hit_anithing = true;
-            t_nearest = temp_rec.t;
-            temp_rec.mat_id = sphere.mat_id;
-            temp_rec.mat_num = sphere.mat_num;
-            *rec = temp_rec;
-        }
+
+    int N[BVH_HELP_TABLE_SIZE] = {-1};      // N - node
+    int LR[BVH_HELP_TABLE_SIZE] = {-1};     // LR - left right 
+
+    int I = 0;
+
+    if (!aabb_box_hit(ray, t_min, t_max, bvh->min[0], bvh->max[0])) {
+        return false;
     }
 
-    for (int i = 0; i < NUM_OF_MOVING_SPHERE; i++)
-    {
-        if (moving_sphere_hit(moving_sphere, i, ray, t_min, t_nearest, &temp_rec)) {
-            hit_anithing = true;
-            t_nearest = temp_rec.t;
-            temp_rec.mat_id = moving_sphere->mat_id[i];
-            temp_rec.mat_num = moving_sphere->mat_num[i];
-            *rec = temp_rec;
+    N[I] = 0;
+    LR[I] = 0;
+    I++; 
+    
+    while (I != 0) {
+        
+        // if we are in tree leaf
+        if (bvh->left[N[I - 1]] == -1 && bvh->right[N[I - 1]] == -1) 
+        {
+            switch(bvh->obj_id[N[I - 1]])
+            {
+                // common sphere
+                case 0:
+                    {
+                        int i = bvh->obj_num[N[I-1]];
+
+                        Sphere sphere = sphere_world_get_sphere(spheres_world, i);
+                        if (sphere_hit(&sphere, ray, t_min, t_nearest, &temp_rec)) {
+                            hit_anithing = true;
+                            t_nearest = temp_rec.t;
+                            temp_rec.mat_id = sphere.mat_id;
+                            temp_rec.mat_num = sphere.mat_num;
+                            *rec = temp_rec;
+                        }
+                    }
+                    break;
+
+                // moving sphere
+                case 1:
+                    {
+                        int i = bvh->obj_num[N[I-1]];
+
+                        if (moving_sphere_hit(moving_sphere, i, ray, t_min, t_nearest, &temp_rec)) {
+                            hit_anithing = true;
+                            t_nearest = temp_rec.t;
+                            temp_rec.mat_id = moving_sphere->mat_id[i];
+                            temp_rec.mat_num = moving_sphere->mat_num[i];
+                            *rec = temp_rec;
+                        }
+                    }
+                    break;
+            }
+
+            N[I - 1] = -1;
+            LR[I - 1] = -1;
+            I--;
+
+            continue;
+        }
+
+        if (LR[I - 1] == 0) {   // first go left
+            LR[I - 1] = 1;
+            int idx = bvh->left[N[I - 1]];
+
+            if (aabb_box_hit(ray, t_min, t_max, bvh->min[idx], bvh->max[idx]))
+            {
+                N[I] = idx;
+                LR[I] = 0;
+                I++;
+            }
+        }
+        else if (LR[I - 1] == 1) {   // then go right
+            LR[I - 1] = 2;
+            int idx = bvh->right[N[I - 1]];
+
+            if (aabb_box_hit(ray, t_min, t_max, bvh->min[idx], bvh->max[idx])) 
+            {
+                N[I] = idx; 
+                LR[I] = 0;
+                I++;    
+            }
+        }
+        else if (LR[I - 1] == 2) {  // if we were on left subtree and right subtree delete current node 
+            N[I - 1] = -1;
+            LR[I - 1] = -1;
+            I--; 
         }
     }
 

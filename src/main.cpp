@@ -221,6 +221,7 @@ int main(int argc, char** argv)
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     build_options += " -D NUM_OF_BVH=" + std::to_string(ptr_BVH_table_size);
+    build_options += " -D BVH_HELP_TABLE_SIZE=" + std::to_string((int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
