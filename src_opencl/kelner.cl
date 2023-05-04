@@ -210,7 +210,7 @@ bool world_hit
 {   
 
     // Turn on/off BVH tree structure
-    if (true)
+    if (false)
     {
         Hit_Record temp_rec;
         bool hit_anithing = false;
@@ -332,7 +332,7 @@ bool bvh_tree_hit
                 I++;
             }
         }
-        else if (LR[I - 1] == 1) {   // then go right
+        if (LR[I - 1] == 1) {   // then go right
             LR[I - 1] = 2;
             int idx = bvh->right[N[I - 1]];
 
@@ -343,7 +343,7 @@ bool bvh_tree_hit
                 I++;    
             }
         }
-        else if (LR[I - 1] == 2) {  // if we were on left subtree and right subtree delete current node 
+        if (LR[I - 1] == 2) {  // if we were on left subtree and right subtree delete current node 
             N[I - 1] = -1;
             LR[I - 1] = -1;
             I--; 
