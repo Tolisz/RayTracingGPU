@@ -1,10 +1,10 @@
 #pragma once
 
-#include "vec/vec.hpp"
 #include <list>
 #include <memory>
 
-#include <iostream>
+#include "vec/vec.hpp"
+#include "textures.hpp"
 
 class Material 
 {
@@ -14,7 +14,6 @@ public:
 };
 
 
-// UWAGA: PROBLEM JEŚLI MATERIAŁ NIE JEST WYKORZYSTYWANY !!!!!!!!!!!
 
 
 
@@ -25,6 +24,7 @@ class Lambertian: public Material
 public:
 
     Lambertian(const vec::vec3& color);
+    Lambertian(std::shared_ptr<Texture> a); 
 
     virtual size_t get_material_id() const noexcept override { return mat_id; }
     virtual size_t get_material_num() const noexcept override { return mat_num; }
@@ -36,7 +36,7 @@ private:
     size_t          mat_num; 
 
 public:
-    vec::vec3   color;
+    std::shared_ptr<Texture> albedo;
 };
 
 class Lambertian_List

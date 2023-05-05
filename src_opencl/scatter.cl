@@ -10,8 +10,11 @@
 #include "helpers.cl"
 #include "random.cl"
 
+#include "texture_solid_color.cl"
+
 bool scatter_lambertian(
     __global Material_Albedo* materials,
+    __global Texture_Solid_Color*     texture_solid,
     Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, mwc64x_state_t* rng)
 {
     float3 scatter_direction = rec->normal + random_in_unit_sphere(rng);
@@ -25,7 +28,16 @@ bool scatter_lambertian(
     scattered->direction = scatter_direction;
     scattered->time = r_in->time;
 
-    *attenuation = materials->albedo[rec->mat_num];
+    //*attenuation = materials->albedo[rec->mat_num];
+
+    switch(materials->tex_id[rec->mat_num])
+    {
+        case 0:
+            {
+                *attenuation = texture_solid->color[materials->tex_num[rec->mat_num]];
+            }
+            break;
+    }
 
     return true;
 }

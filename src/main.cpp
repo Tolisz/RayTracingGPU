@@ -25,6 +25,7 @@
 #include "spheres_world.hpp"
 #include "random.hpp"
 #include "BVH_tree.hpp"
+#include "textures.hpp"
 
 World random_scene() {
 
@@ -112,7 +113,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 1024;
+    size_t image_width = 400;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
@@ -159,7 +160,11 @@ int main(int argc, char** argv)
 
     tree.get_cl_structure(&ptr_BVH, &ptr_BVH_size, &ptr_BVH_table_size);
     
-    
+    void* ptr_texture_solid = nullptr;
+    size_t ptr_texture_solid_size;
+    size_t ptr_texture_solid_table_size;
+    Solid_Color_List::get_cl_structure(&ptr_texture_solid, &ptr_texture_solid_size, &ptr_texture_solid_table_size);
+
     cl_int err;
 
     /* OpenCL platform */
@@ -222,6 +227,7 @@ int main(int argc, char** argv)
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     build_options += " -D NUM_OF_BVH=" + std::to_string(ptr_BVH_table_size);
     build_options += " -D BVH_HELP_TABLE_SIZE=" + std::to_string((int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1);
+    build_options += " -D NUM_OF_TEX_SOLID_COLOR=" + std::to_string(ptr_texture_solid_table_size);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
     if(err < 0) {
@@ -362,6 +368,18 @@ int main(int argc, char** argv)
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
+
+    // TEKSTURY!!!!!!!!
+    cl_mem solid_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_texture_solid_size, ptr_texture_solid, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer object" << err);
+    }
+
+    err = clSetKernelArg(kernel, 8, sizeof(cl_mem), &solid_mem);
+    if (err < 0) {
+        ERROR("Can not set Kernel Argument " << err);
+    }
+    
 
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 

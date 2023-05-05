@@ -17,7 +17,12 @@
 
 size_t Lambertian::count = 0;
 
-Lambertian::Lambertian(const vec::vec3& color): color{color}, mat_num{count++} 
+Lambertian::Lambertian(const vec::vec3& color)
+    : Lambertian(std::make_shared<Solid_Color>(color))
+{}
+
+Lambertian::Lambertian(std::shared_ptr<Texture> a)
+    : albedo{a}, mat_num{count++}
 {
     Lambertian_List::lamb_list.push_back(this);
 }
@@ -30,18 +35,19 @@ bool Lambertian_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* tab
     //               OpenCL struct
     // -------------------------------------------
     // 
-    //      typedef struct _Material_Albedo 
-    //      {
-    //          cl_float3 albedo[table_size];
-    //      }
-    //      Material_Albedo;
+    //        typedef struct _Material_Albedo 
+    //        {
+    //            cl_int tex_id[table_size];
+    //            cl_int tex_num[table_size];
+    //        }
+    //        Material_Albedo;
     // 
     // -------------------------------------------
 
     if (table_size)
         *table_size = lamb_list.size();
     
-    *ptr_size = lamb_list.size() * sizeof(cl_float3);
+    *ptr_size = lamb_list.size() * (2 * sizeof(cl_int));
 
     *ptr = std::calloc(*ptr_size, sizeof(char));
     if (!ptr) {
@@ -49,11 +55,10 @@ bool Lambertian_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* tab
         return false;
     }
 
-    auto vec3_to_clfloat3 = [](const vec::vec3& v) -> cl_float3 { return {v[0], v[1], v[2]}; };
-
     auto it = lamb_list.cbegin();
     for (int i = 0; i < lamb_list.size(); ++i, ++it) {
-        *((cl_float3*)*ptr + i) = vec3_to_clfloat3((*it)->color);
+        *((cl_int*)*ptr + i) = (*it)->albedo->get_texture_id();
+        *((cl_int*)*ptr + lamb_list.size() + i) = (*it)->albedo->get_texture_num();
     }
 
     return true;
