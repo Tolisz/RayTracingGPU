@@ -33,17 +33,28 @@ void bvh_tree_debug(__global BVH_tree* bvh)
 
 bool aabb_box_hit(Ray* r, float t_min, float t_max, float3 minimum, float3 maximum)
 {
-    for (int a = 0; a < 3; a++) {
-        float t0 = fmin((minimum[a] - r->origin[a]) / r->direction[a],
-                        (maximum[a] - r->origin[a]) / r->direction[a]);
-        float t1 = fmax((minimum[a] - r->origin[a]) / r->direction[a],
-                        (maximum[a] - r->origin[a]) / r->direction[a]);
-        t_min = fmax(t0, t_min);
-        t_max = fmin(t1, t_max);
-        if (t_max <= t_min)
-            return false;
-    }
-    return true;
+    // for (int a = 0; a < 3; a++) {
+    //     float t0 = fmin((minimum[a] - r->origin[a]) / r->direction[a],
+    //                     (maximum[a] - r->origin[a]) / r->direction[a]);
+    //     float t1 = fmax((minimum[a] - r->origin[a]) / r->direction[a],
+    //                     (maximum[a] - r->origin[a]) / r->direction[a]);
+    //     t_min = fmax(t0, t_min);
+    //     t_max = fmin(t1, t_max);
+    //     if (t_max <= t_min)
+    //         return false;
+    // }
+
+    float3 invD = native_recip(r->direction);
+    float3 t0s = (minimum - r->origin) * invD;
+    float3 t1s = (maximum - r->origin) * invD;
+
+    float3 tsmaller = min(t0s, t1s);
+    float3 tbigger = max(t0s, t1s);
+
+    t_min = max(t_min, max(tsmaller[0], max(tsmaller[1], tsmaller[2])));
+    t_max = min(t_max, min(tbigger[0], min(tbigger[1], tbigger[2]))); 
+
+    return t_min < t_max;
 }
 
 #endif 
