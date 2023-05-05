@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 400;
+    size_t image_width = 1024;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------

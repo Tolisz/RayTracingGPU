@@ -277,6 +277,7 @@ bool bvh_tree_hit
     
     while (I != 0) {
         
+
         // if we are in tree leaf
         if (bvh->left[N[I - 1]] == -1 && bvh->right[N[I - 1]] == -1) 
         {
@@ -343,7 +344,8 @@ bool bvh_tree_hit
                 I++;    
             }
         }
-        if (LR[I - 1] == 2) {  // if we were on left subtree and right subtree delete current node 
+
+        while (LR[I - 1] == 2) {  // if we were on left subtree and right subtree delete current node 
             N[I - 1] = -1;
             LR[I - 1] = -1;
             I--; 
