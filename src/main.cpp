@@ -11,13 +11,15 @@
 #include <cstdlib>
 
 #include "error.h"
-#include "utility_functions.h"
+#include "utility_functions.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 #define SAMPLES_PER_PIXEL 100
 #define MAX_RECURSION_DEPTH 10
+
+#include "CL_wrap.hpp"
 
 #include "camera.hpp"
 #include "vec/vec.hpp"
@@ -93,6 +95,15 @@ World test_scene()
     auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
     world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
 
+    auto material1 = std::make_shared<Dielectric>(1.5);
+    world.add(std::make_shared<Sphere>(vec::vec3(0, 1, 0), 1.0, material1));
+
+    auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
+    world.add(std::make_shared<Sphere>(vec::vec3(-4, 1, 0), 1.0, material2));
+
+    auto material3 = std::make_shared<Metal>(vec::vec3(0.7, 0.6, 0.5), 0.0);
+    world.add(std::make_shared<Sphere>(vec::vec3(4, 1, 0), 1.0, material3));
+
     return world;
 }
 
@@ -107,7 +118,7 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    World world = test_scene(); 
+    World world = test_scene();
 
 
     std::cout << "Utworzylem scene" << std::endl;
@@ -175,98 +186,40 @@ int main(int argc, char** argv)
     size_t ptr_texture_solid_table_size;
     Solid_Color_List::get_cl_structure(&ptr_texture_solid, &ptr_texture_solid_size, &ptr_texture_solid_table_size);
 
-    if (ptr_texture_solid == nullptr) 
-    {
-        std::cout << "DUPA" << std::endl;
-    }
-
     cl_int err;
 
-    /* OpenCL platform */
+    // /* OpenCL platform */
 
-    cl_platform_id platform;
-    err = clGetPlatformIDs(1, &platform, NULL);
-    if (err < 0) {
-        ERROR("Any platform has not been detected, do you have any OpenCL SDK installed? err = " << err);
-    }
-
-    /* OpenCL device */
-    
-    cl_device_id device;
-    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-    if (err < 0) {
-        ERROR("Any device related to previously found platform has not been detected; err = " << err);
-    }
-
-    /* OpenCL Context */
-    
-    cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-    if (err < 0) {
-        ERROR("Context can not be created: err = " << err);
-    }
-
-    /* OpenCL comand queue */
-
-    cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, NULL, &err);
-    if(err < 0) {
-        ERROR("Comand queue can not be created: err = " << err);
-    }
-
-    /* OpenCL program and kelner*/
+    CL::CL_wrap cl_object;
 
     std::cout << "Stworzylem konieczne elementy OpenCL do wykorzystania w programie" << std::endl;
 
-    std::string program_file = "src_opencl/kelner.cl";
-    std::string kelner_name = "ray_tracer";
+    cl_object.create_program("src_opencl/kelner.cl");
 
-    size_t program_size;
-    char* program_buffer = read_file(program_file.c_str(), &program_size);
-    if (!program_buffer) {
-        ERROR("Can not read a file \"" << program_file << "\"");
-    }
+    /* OpenCL program and kelner*/
 
-    cl_program program;
-    program = clCreateProgramWithSource(context, 1, (const char**)&program_buffer, &program_size, &err);
-    if(err < 0) {
-        ERROR("Can not create a program from the source file");
-    }
-    free(program_buffer);
+    //std::string kelner_name = "ray_tracer";
 
-    std::string build_options = "-I./src_opencl "; 
-    build_options += "-D NUMBER_OF_SPHERES=" + std::to_string(ptr_spheres_table_size); 
-    build_options += " -D NUM_OF_ALBEDO_MATERIALS=" + std::to_string(ptr_albedo_table_size);
-    build_options += " -D NUM_OF_FUZZ_MATERIALS=" + std::to_string(ptr_fuzz_table_size);
-    build_options += " -D NUM_OF_REFLECTANCE_MATERIALS=" + std::to_string(ptr_metal_table_size);
-    build_options += " -D NUM_OF_MOVING_SPHERE=" + std::to_string(ptr_moving_spheres_table_size);
-    build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
-    build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
-    build_options += " -D NUM_OF_BVH=" + std::to_string(ptr_BVH_table_size);
-    build_options += " -D BVH_HELP_TABLE_SIZE=" + std::to_string(ptr_BVH_table_size == 0 ? 1 : (int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1);    
-    build_options += " -D NUM_OF_TEX_SOLID_COLOR=" + std::to_string(ptr_texture_solid_table_size);
-    std::cout << "BUILD OPTIONS = " << build_options << "\n";   
-    err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
-    if(err < 0) {
-        /* Find size of log and print to std output */
-        size_t log_size;
-        char* program_log;
+    cl_object.add_include_dir("./src_opencl");
+    
+    cl_object.add_define("NUMBER_OF_SPHERES"                , std::to_string(ptr_spheres_table_size));
+    cl_object.add_define("NUM_OF_ALBEDO_MATERIALS"          , std::to_string(ptr_albedo_table_size));
+    cl_object.add_define("NUM_OF_FUZZ_MATERIALS"            , std::to_string(ptr_fuzz_table_size));
+    cl_object.add_define("NUM_OF_REFLECTANCE_MATERIALS"     , std::to_string(ptr_metal_table_size));
+    cl_object.add_define("NUM_OF_MOVING_SPHERE"             , std::to_string(ptr_moving_spheres_table_size));
+    cl_object.add_define("SAMPLES_PER_PIXEL"                , std::to_string(SAMPLES_PER_PIXEL));
+    cl_object.add_define("MAX_RECURSION_DEPTH"              , std::to_string(MAX_RECURSION_DEPTH));
+    cl_object.add_define("NUM_OF_BVH"                       , std::to_string(ptr_BVH_table_size));
+    cl_object.add_define("BVH_HELP_TABLE_SIZE"              , std::to_string(ptr_BVH_table_size == 0 ? 1 : (int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1));    
+    cl_object.add_define("NUM_OF_TEX_SOLID_COLOR"           , std::to_string(ptr_texture_solid_table_size));
 
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG,  0, NULL, &log_size);
-        program_log = (char*) malloc(log_size + 1);
-        program_log[log_size] = '\0';
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
-        printf("%s\n", program_log);
-        free(program_log);
-        exit(1);
-    }
+    std::cout << "BUILD OPTIONS = " << cl_object.get_build_options() << "\n";   
+
+    cl_object.build_program();
 
     std::cout << "Zbudowalem program" << std::endl;
 
-    /* OpenCL kernel */
-
-    cl_kernel kernel = clCreateKernel(program, kelner_name.c_str(), &err);
-    if(err < 0) {
-        ERROR("Can not create a kelner \"" << kelner_name << "\" err = " << err);
-    }
+    cl_object.create_kelner("ray_tracer");
 
     std::cout << "Stworzylem kelner" << std::endl;
 
@@ -288,12 +241,12 @@ int main(int argc, char** argv)
     image_desc.num_samples = 0;
     image_desc.mem_object = NULL;
 
-    cl_mem cl_image = clCreateImage(context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
+    cl_mem cl_image = clCreateImage(cl_object.m_context, CL_MEM_WRITE_ONLY, &image_format, &image_desc, NULL, &err);
     if (err < 0) {
         ERROR("Can not create image object " << err);
     }
 
-    err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &cl_image);
+    err = clSetKernelArg(cl_object.m_kernel, 0, sizeof(cl_mem), &cl_image);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -306,24 +259,24 @@ int main(int argc, char** argv)
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
 
-    cl_mem cam_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(CL_Camera), &camcl, &err);
+    cl_mem cam_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(CL_Camera), &camcl, &err);
     if (err < 0) {
         ERROR("Can not create buffer for camera " << err);
     }
 
-    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cam_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 1, sizeof(cl_mem), &cam_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem sferki = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                             ptr_spheres_size == 0 ? 1 : ptr_spheres_size,
                             ptr_spheres == nullptr ? &NULL_wrapper : ptr_spheres, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
 
-    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &sferki);
+    err = clSetKernelArg(cl_object.m_kernel, 2, sizeof(cl_mem), &sferki);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -331,14 +284,14 @@ int main(int argc, char** argv)
     // // MATERIAŁY
     // // ----------
 
-    cl_mem albedo_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem albedo_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                                 ptr_albedo_size == 0 ? 1 : ptr_albedo_size,
                                 ptr_albedo == nullptr ? &NULL_wrapper : ptr_albedo, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
     
-    err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &albedo_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 3, sizeof(cl_mem), &albedo_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -346,14 +299,14 @@ int main(int argc, char** argv)
 
 
 
-    cl_mem metal_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem metal_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                             ptr_metal_size == 0 ? 1 : ptr_metal_size, 
                             ptr_metal == nullptr ? &NULL_wrapper : ptr_metal, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
     
-    err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &metal_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 4, sizeof(cl_mem), &metal_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -361,14 +314,14 @@ int main(int argc, char** argv)
 
 
 
-    cl_mem fuzz_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem fuzz_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                             ptr_fuzz_size == 0 ? 1 : ptr_fuzz_size,
                             ptr_fuzz == nullptr ? &NULL_wrapper : ptr_fuzz, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
 
-    err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &fuzz_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 5, sizeof(cl_mem), &fuzz_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -379,40 +332,40 @@ int main(int argc, char** argv)
 
     // // Moving Spheres
 
-    cl_mem moving_s = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem moving_s = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                             ptr_moving_spheres_size == 0 ? 1 : ptr_moving_spheres_size,
                             ptr_moving_spheres == nullptr ? &NULL_wrapper : ptr_moving_spheres, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
 
-    err = clSetKernelArg(kernel, 6, sizeof(cl_mem), &moving_s);
+    err = clSetKernelArg(cl_object.m_kernel, 6, sizeof(cl_mem), &moving_s);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
     // BVH
-    cl_mem BVH_kernel_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem BVH_kernel_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                                 ptr_BVH_size == 0 ? 1 : ptr_BVH_size, 
                                 ptr_BVH == nullptr ? &NULL_wrapper : ptr_BVH, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
 
-    err = clSetKernelArg(kernel, 7, sizeof(cl_mem), &BVH_kernel_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 7, sizeof(cl_mem), &BVH_kernel_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
     // // TEKSTURY!!!!!!!!
-    cl_mem solid_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+    cl_mem solid_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
                                 ptr_texture_solid_size == 0 ? 1 : ptr_texture_solid_size,
                                 ptr_texture_solid == nullptr ? &NULL_wrapper : ptr_texture_solid, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
 
-    err = clSetKernelArg(kernel, 8, sizeof(cl_mem), &solid_mem);
+    err = clSetKernelArg(cl_object.m_kernel, 8, sizeof(cl_mem), &solid_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
@@ -421,7 +374,7 @@ int main(int argc, char** argv)
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 
     size_t global_size[2] = {image_height, image_width};
-    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(cl_object.m_queue, cl_object.m_kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (err < 0) {
         ERROR("Can not enqueue kernle " << err);
     }
@@ -438,7 +391,7 @@ int main(int argc, char** argv)
     region[1] = image_height; 
     region[2] = 1;
 
-    err = clEnqueueReadImage(queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
+    err = clEnqueueReadImage(cl_object.m_queue, cl_image, CL_TRUE, origin, region, 0, 0, (void*)pixels, 0, NULL, NULL);
     if(err < 0) {
         perror("Couldn't read from the image object");
         exit(1);   
@@ -449,9 +402,6 @@ int main(int argc, char** argv)
     free(pixels);
 
     /* Cleaning */
-
-    clReleaseKernel(kernel);
-    clReleaseProgram(program);
 
     std::free(ptr_albedo);
     std::free(ptr_metal);

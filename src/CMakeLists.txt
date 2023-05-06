@@ -7,6 +7,8 @@ add_executable(rt_gpu
     random.cpp
     BVH_tree.cpp
     textures.cpp
+    CL_wrap.cpp
+    utility_functions.cpp
 )
 
 target_link_libraries(rt_gpu OpenCL)
