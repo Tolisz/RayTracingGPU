@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     // -----------------------------
 
     World world = test_scene();
-
+    //World world = random_scene();
 
     std::cout << "Utworzylem scene" << std::endl;
 
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
 
     std::cout << "Zbudowalem program" << std::endl;
 
-    cl_object.create_kelner("ray_tracer");
+    cl_object.create_kernel("ray_tracer");
 
     std::cout << "Stworzylem kelner" << std::endl;
 
@@ -245,131 +245,48 @@ int main(int argc, char** argv)
     if (err < 0) {
         ERROR("Can not create image object " << err);
     }
+    cl_object.set_kernel_arg(0, sizeof(cl_mem), &cl_image);
 
-    err = clSetKernelArg(cl_object.m_kernel, 0, sizeof(cl_mem), &cl_image);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-
-    // Camera settings
     char NULL_wrapper = '\n';
+    // Camera settings
 
     Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus, 0.0f, 1.0f);
 
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
 
-    cl_mem cam_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(CL_Camera), &camcl, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer for camera " << err);
-    }
+    cl_mem cam_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(CL_Camera), &camcl);
+    cl_object.set_kernel_arg(1, sizeof(cl_mem), &cam_mem);
 
-    err = clSetKernelArg(cl_object.m_kernel, 1, sizeof(cl_mem), &cam_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
+    cl_mem sferki = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_spheres_size == 0 ? 1 : ptr_spheres_size, ptr_spheres == nullptr ? &NULL_wrapper : ptr_spheres);
+    cl_object.set_kernel_arg(2, sizeof(cl_mem), &sferki);
 
-    cl_mem sferki = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                            ptr_spheres_size == 0 ? 1 : ptr_spheres_size,
-                            ptr_spheres == nullptr ? &NULL_wrapper : ptr_spheres, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer object" << err);
-    }
+    // MATERIAŁY
+    // ----------
 
-    err = clSetKernelArg(cl_object.m_kernel, 2, sizeof(cl_mem), &sferki);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
+    cl_mem albedo_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_albedo_size == 0 ? 1 : ptr_albedo_size, ptr_albedo == nullptr ? &NULL_wrapper : ptr_albedo);
+    cl_object.set_kernel_arg(3, sizeof(cl_mem), &albedo_mem);
 
-    // // MATERIAŁY
-    // // ----------
+    cl_mem metal_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_metal_size == 0 ? 1 : ptr_metal_size, ptr_metal == nullptr ? &NULL_wrapper : ptr_metal);
+    cl_object.set_kernel_arg(4, sizeof(cl_mem), &metal_mem);
 
-    cl_mem albedo_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                                ptr_albedo_size == 0 ? 1 : ptr_albedo_size,
-                                ptr_albedo == nullptr ? &NULL_wrapper : ptr_albedo, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer" << err);
-    }
-    
-    err = clSetKernelArg(cl_object.m_kernel, 3, sizeof(cl_mem), &albedo_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-
-
-
-
-    cl_mem metal_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                            ptr_metal_size == 0 ? 1 : ptr_metal_size, 
-                            ptr_metal == nullptr ? &NULL_wrapper : ptr_metal, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer" << err);
-    }
-    
-    err = clSetKernelArg(cl_object.m_kernel, 4, sizeof(cl_mem), &metal_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-
-
-
-
-    cl_mem fuzz_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                            ptr_fuzz_size == 0 ? 1 : ptr_fuzz_size,
-                            ptr_fuzz == nullptr ? &NULL_wrapper : ptr_fuzz, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer" << err);
-    }
-
-    err = clSetKernelArg(cl_object.m_kernel, 5, sizeof(cl_mem), &fuzz_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-
-
-
-
+    cl_mem fuzz_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_fuzz_size == 0 ? 1 : ptr_fuzz_size, ptr_fuzz == nullptr ? &NULL_wrapper : ptr_fuzz);
+    cl_object.set_kernel_arg(5, sizeof(cl_mem), &fuzz_mem);
 
     // // Moving Spheres
 
-    cl_mem moving_s = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                            ptr_moving_spheres_size == 0 ? 1 : ptr_moving_spheres_size,
-                            ptr_moving_spheres == nullptr ? &NULL_wrapper : ptr_moving_spheres, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer object" << err);
-    }
-
-    err = clSetKernelArg(cl_object.m_kernel, 6, sizeof(cl_mem), &moving_s);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
+    cl_mem moving_s = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_moving_spheres_size == 0 ? 1 : ptr_moving_spheres_size, ptr_moving_spheres == nullptr ? &NULL_wrapper : ptr_moving_spheres);
+    cl_object.set_kernel_arg(6, sizeof(cl_mem), &moving_s);
 
     // BVH
-    cl_mem BVH_kernel_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                                ptr_BVH_size == 0 ? 1 : ptr_BVH_size, 
-                                ptr_BVH == nullptr ? &NULL_wrapper : ptr_BVH, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer object" << err);
-    }
 
-    err = clSetKernelArg(cl_object.m_kernel, 7, sizeof(cl_mem), &BVH_kernel_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
+    cl_mem BVH_kernel_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_BVH_size == 0 ? 1 : ptr_BVH_size, ptr_BVH == nullptr ? &NULL_wrapper : ptr_BVH);
+    cl_object.set_kernel_arg(7, sizeof(cl_mem), &BVH_kernel_mem);
 
-    // // TEKSTURY!!!!!!!!
-    cl_mem solid_mem = clCreateBuffer(cl_object.m_context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
-                                ptr_texture_solid_size == 0 ? 1 : ptr_texture_solid_size,
-                                ptr_texture_solid == nullptr ? &NULL_wrapper : ptr_texture_solid, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer object" << err);
-    }
+    // TEKSTURY!!!!!!!!
 
-    err = clSetKernelArg(cl_object.m_kernel, 8, sizeof(cl_mem), &solid_mem);
-    if (err < 0) {
-        ERROR("Can not set Kernel Argument " << err);
-    }
-    
+    cl_mem solid_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_texture_solid_size == 0 ? 1 : ptr_texture_solid_size, ptr_texture_solid == nullptr ? &NULL_wrapper : ptr_texture_solid);
+    cl_object.set_kernel_arg(8, sizeof(cl_mem), &solid_mem);
 
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 

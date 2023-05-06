@@ -33,6 +33,10 @@ namespace CL
 
     CL_wrap::~CL_wrap()
     {
+        for (auto& it : m_buffer_list) {
+            clReleaseMemObject(it);
+        }
+
         clReleaseKernel(m_kernel);
         clReleaseProgram(m_program);
         clReleaseCommandQueue(m_queue);
@@ -77,7 +81,7 @@ namespace CL
         }
     }
 
-    void CL_wrap::create_kelner(std::string kelner_name)
+    void CL_wrap::create_kernel(std::string kelner_name)
     {
         cl_int err;
 
@@ -90,6 +94,29 @@ namespace CL
     void CL_wrap::add_include_dir(std::string Idir)
     {
         m_build_options += " -I" + Idir;
+    }
+
+    void CL_wrap::set_kernel_arg(cl_uint arg_index, size_t arg_size, const void *arg_value)
+    {
+        cl_int err;
+
+        err = clSetKernelArg(m_kernel, arg_index, arg_size, arg_value);
+        if (err < 0) {
+            ERROR("Can not set Kernel Argument number << " << arg_index << " because of an error: " << err);
+        }
+    }
+
+    cl_mem CL_wrap::create_buffer(cl_mem_flags flags, size_t size, void *host_ptr)
+    {
+        cl_int err;
+
+        cl_mem memory = clCreateBuffer(m_context, flags, size, host_ptr, &err);
+        if (err < 0) {
+            ERROR("Can not create device buffer buffer" << err);
+        }
+
+        m_buffer_list.push_back(memory);
+        return memory;
     }
 
     void CL_wrap::add_define(std::string DEFINE_NAME, std::string VALUE)

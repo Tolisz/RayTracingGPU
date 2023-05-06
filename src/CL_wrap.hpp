@@ -9,6 +9,7 @@
 #endif
 
 #include <string>
+#include <list>
 
 namespace CL
 {
@@ -24,10 +25,14 @@ namespace CL
 
         void create_program(std::string program_file);
         void build_program();
-        void create_kelner(std::string kelner_name);
+        
+        void create_kernel(std::string kelner_name);
+        void set_kernel_arg(cl_uint arg_index, size_t arg_size, const void *arg_value);
         
         void add_include_dir(std::string dir);
         void add_define(std::string DEFINE_NAME, std::string VALUE);
+
+        cl_mem create_buffer(cl_mem_flags flags, size_t size, void *host_ptr);
 
         const std::string& get_build_options() const;
 
@@ -43,6 +48,10 @@ namespace CL
         cl_kernel           m_kernel;
 
         std::string         m_build_options;
+
+    private:
+
+        std::list<cl_mem>   m_buffer_list;
     };
 
 }
