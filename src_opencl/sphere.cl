@@ -1,22 +1,39 @@
 #ifndef CL_SPHERES_WORLD
 #define CL_SPHERES_WORLD
 
+
 #include "hit_record.cl"
 #include "ray.cl"
 
-typedef struct __attribute__ ((packed)) _Spheres_World
-{   
-    // center
-    float3 c[NUMBER_OF_SPHERES];
+#if (NUMBER_OF_SPHERES != 0)
+    typedef struct __attribute__ ((packed)) _Spheres_World
+    {   
+        // center
+        float3 c[NUMBER_OF_SPHERES];
 
-    // radius
-    float r[NUMBER_OF_SPHERES];
+        // radius
+        float r[NUMBER_OF_SPHERES];
 
-    // material
-    int mat_id[NUMBER_OF_SPHERES];
-    int mat_num[NUMBER_OF_SPHERES];
-} 
-Spheres_World;
+        // material
+        int mat_id[NUMBER_OF_SPHERES];
+        int mat_num[NUMBER_OF_SPHERES];
+    } 
+    Spheres_World;
+#else 
+    typedef struct __attribute__ ((packed)) _Spheres_World
+    {   
+        // center
+        float3 c[1];
+
+        // radius
+        float r[1];
+
+        // material
+        int mat_id[1];
+        int mat_num[1];
+    } 
+    Spheres_World;
+#endif
 
 typedef struct _Sphere 
 {
@@ -69,6 +86,5 @@ Sphere sphere_world_get_sphere(__global Spheres_World* spheres_world, int i)
 
     return sphere;
 }
-
 
 #endif

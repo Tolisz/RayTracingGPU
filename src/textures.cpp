@@ -46,6 +46,14 @@ bool Solid_Color_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* ta
     //
     // -------------------------------------------
 
+    if (sol_colors.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
+
     if (table_size)
         *table_size = sol_colors.size();
     

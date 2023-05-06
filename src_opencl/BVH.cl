@@ -3,17 +3,31 @@
 
 #include "ray.cl"
 
-typedef struct __attribute__ ((packed)) _BVH_TREE
-{
-    int left[NUM_OF_BVH];
-    int right[NUM_OF_BVH];
-    int obj_id[NUM_OF_BVH];
-    int obj_num[NUM_OF_BVH];
+#if (NUM_OF_BVH != 0)
+    typedef struct __attribute__ ((packed)) _BVH_TREE
+    {
+        int left[NUM_OF_BVH];
+        int right[NUM_OF_BVH];
+        int obj_id[NUM_OF_BVH];
+        int obj_num[NUM_OF_BVH];
 
-    float3 min[NUM_OF_BVH];
-    float3 max[NUM_OF_BVH];
-} 
-BVH_tree;
+        float3 min[NUM_OF_BVH];
+        float3 max[NUM_OF_BVH];
+    } 
+    BVH_tree;
+#else 
+    typedef struct __attribute__ ((packed)) _BVH_TREE
+    {
+        int left[1];
+        int right[1];
+        int obj_id[1];
+        int obj_num[1];
+
+        float3 min[1];
+        float3 max[1];
+    } 
+    BVH_tree;
+#endif
 
 void bvh_tree_debug(__global BVH_tree* bvh)
 {

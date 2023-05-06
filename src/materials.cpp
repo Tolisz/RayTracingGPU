@@ -44,6 +44,14 @@ bool Lambertian_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* tab
     // 
     // -------------------------------------------
 
+    if (lamb_list.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
+
     if (table_size)
         *table_size = lamb_list.size();
     
@@ -92,6 +100,14 @@ bool Metal_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_si
     //        Material_Fuzz;
     // 
     // -------------------------------------------
+
+    if (metal_list.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
 
     if(table_size)
         *table_size = metal_list.size();
@@ -148,6 +164,13 @@ bool Dielectric_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* tab
     // 
     // -------------------------------------------
 
+    if (dielec_list.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
 
     if(table_size)
         *table_size = dielec_list.size();

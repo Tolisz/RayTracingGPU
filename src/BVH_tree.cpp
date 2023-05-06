@@ -101,6 +101,12 @@ BVH_tree::BVH_tree(std::vector<std::shared_ptr<Object>> objects, float time0, fl
 
 BVH_tree::BVH_tree(std::vector<std::shared_ptr<Object>> objects, size_t start, size_t end, float time0, float time1)
 {
+    if (objects.size() == 0 || (end - start <= 0))
+    {
+        root = nullptr;
+        return;
+    }
+
     root = std::make_unique<BVH_node>(objects, start, end, time0, time1, tree_size);
 }
 
@@ -123,6 +129,14 @@ bool BVH_tree::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size
     //          BVH;
     // 
     // -------------------------------------------
+
+    if (root == nullptr) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+        
+        return false;
+    }
 
     if (table_size)
         *table_size = tree_size;

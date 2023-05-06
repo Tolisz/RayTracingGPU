@@ -93,6 +93,14 @@ bool Sphere_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_s
     // 
     // -------------------------------------------
 
+    if (spheres.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
+
 
     if (table_size)
         *table_size = spheres.size();
@@ -189,6 +197,13 @@ bool Moving_Sphere_List::get_cl_structure(void** ptr, size_t* ptr_size, size_t* 
     //
     // -------------------------------------------
 
+    if (moving_spheres.empty()) {
+        *ptr = nullptr;
+        *ptr_size = 0;
+        *table_size = 0;
+
+        return false;
+    }
 
     if (table_size)
         *table_size = moving_spheres.size();

@@ -57,12 +57,12 @@ bool bvh_tree_hit
 __kernel void ray_tracer
 (
     write_only image2d_t image, 
-    __global Camera*                    cam, 
-    __global Spheres_World*             spheres_world, 
+    __global Camera*                    cam,
+    __global Spheres_World*             spheres_world,
     __global Material_Albedo*           mat_albedo,
     __global Material_Fuzz*             mat_fuzz,
     __global Material_Reflectance*      mat_reflectance,
-    __global Moving_Sphere*             moving_sphere, 
+    __global Moving_Sphere*             moving_sphere,
     __global BVH_tree*                  bvh_tree, 
     __global Texture_Solid_Color*       texture_solid)
 {
@@ -89,6 +89,7 @@ __kernel void ray_tracer
 
         // Ray
         Ray ray = camera_get_ray(cam, &rng, u, v);
+        //color += (float3)(0.0f, 1.0f, 1.0f);
         color += ray_color(spheres_world, moving_sphere, bvh_tree, mat_albedo, mat_fuzz, mat_reflectance, texture_solid, &ray, &rng);
     }
 
@@ -262,10 +263,13 @@ bool bvh_tree_hit
     Hit_Record* rec
 )
 {
+#if (NUM_OF_BVH == 0)
+    return false;
+#else 
+
     Hit_Record temp_rec;
     bool hit_anithing = false;
     float t_nearest = t_max;
-
 
     int N[BVH_HELP_TABLE_SIZE] = {-1};      // N - node
     int LR[BVH_HELP_TABLE_SIZE] = {-1};     // LR - left right 
@@ -358,4 +362,5 @@ bool bvh_tree_hit
     }
 
     return hit_anithing;
+#endif 
 }

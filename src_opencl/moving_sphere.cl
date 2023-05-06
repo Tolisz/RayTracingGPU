@@ -4,19 +4,35 @@
 #include "ray.cl"
 #include "hit_record.cl"
 
-typedef struct __attribute__ ((packed)) _Moving_Sphere
-{
-    float3 center0[NUM_OF_MOVING_SPHERE];
-    float3 center1[NUM_OF_MOVING_SPHERE];
+#if (NUM_OF_MOVING_SPHERE != 0)
+    typedef struct __attribute__ ((packed)) _Moving_Sphere
+    {
+        float3 center0[NUM_OF_MOVING_SPHERE];
+        float3 center1[NUM_OF_MOVING_SPHERE];
 
-    float time0[NUM_OF_MOVING_SPHERE];
-    float time1[NUM_OF_MOVING_SPHERE];
-    float radius[NUM_OF_MOVING_SPHERE];
+        float time0[NUM_OF_MOVING_SPHERE];
+        float time1[NUM_OF_MOVING_SPHERE];
+        float radius[NUM_OF_MOVING_SPHERE];
 
-    int mat_id[NUM_OF_MOVING_SPHERE];
-    int mat_num[NUM_OF_MOVING_SPHERE];
-}
-Moving_Sphere;
+        int mat_id[NUM_OF_MOVING_SPHERE];
+        int mat_num[NUM_OF_MOVING_SPHERE];
+    }
+    Moving_Sphere;
+#else 
+    typedef struct __attribute__ ((packed)) _Moving_Sphere
+    {
+        float3 center0[1];
+        float3 center1[1];
+
+        float time0[1];
+        float time1[1];
+        float radius[1];
+
+        int mat_id[1];
+        int mat_num[1];
+    }
+    Moving_Sphere;
+#endif 
 
 void moving_sphere_debug(__global Moving_Sphere* ms)
 {

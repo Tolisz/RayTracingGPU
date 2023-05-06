@@ -86,6 +86,16 @@ World random_scene() {
     return world;
 }
 
+World test_scene() 
+{
+    World world;
+
+    auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
+
+    return world;
+}
+
 //  --------------------------------  //
 //                MAIN                //
 //  --------------------------------  // 
@@ -97,7 +107,7 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    World world = random_scene(); 
+    World world = test_scene(); 
 
 
     std::cout << "Utworzylem scene" << std::endl;
@@ -165,6 +175,11 @@ int main(int argc, char** argv)
     size_t ptr_texture_solid_table_size;
     Solid_Color_List::get_cl_structure(&ptr_texture_solid, &ptr_texture_solid_size, &ptr_texture_solid_table_size);
 
+    if (ptr_texture_solid == nullptr) 
+    {
+        std::cout << "DUPA" << std::endl;
+    }
+
     cl_int err;
 
     /* OpenCL platform */
@@ -226,7 +241,7 @@ int main(int argc, char** argv)
     build_options += " -D SAMPLES_PER_PIXEL=" + std::to_string(SAMPLES_PER_PIXEL);
     build_options += " -D MAX_RECURSION_DEPTH=" + std::to_string(MAX_RECURSION_DEPTH);
     build_options += " -D NUM_OF_BVH=" + std::to_string(ptr_BVH_table_size);
-    build_options += " -D BVH_HELP_TABLE_SIZE=" + std::to_string((int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1);
+    build_options += " -D BVH_HELP_TABLE_SIZE=" + std::to_string(ptr_BVH_table_size == 0 ? 1 : (int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1);    
     build_options += " -D NUM_OF_TEX_SOLID_COLOR=" + std::to_string(ptr_texture_solid_table_size);
     std::cout << "BUILD OPTIONS = " << build_options << "\n";   
     err = clBuildProgram(program, 0, NULL, build_options.c_str(), NULL, NULL);
@@ -284,7 +299,7 @@ int main(int argc, char** argv)
     }
 
     // Camera settings
-
+    char NULL_wrapper = '\n';
 
     Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus, 0.0f, 1.0f);
 
@@ -301,7 +316,9 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_spheres_size, ptr_spheres, &err);
+    cl_mem sferki = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                            ptr_spheres_size == 0 ? 1 : ptr_spheres_size,
+                            ptr_spheres == nullptr ? &NULL_wrapper : ptr_spheres, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
@@ -311,34 +328,44 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    // MATERIAŁY
-    // ----------
+    // // MATERIAŁY
+    // // ----------
 
-
-    cl_mem albedo_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_albedo_size, ptr_albedo, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer" << err);
-    }
-
-    cl_mem metal_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_metal_size, ptr_metal, &err);
+    cl_mem albedo_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                                ptr_albedo_size == 0 ? 1 : ptr_albedo_size,
+                                ptr_albedo == nullptr ? &NULL_wrapper : ptr_albedo, &err);
     if (err < 0) {
         ERROR("Can not create buffer" << err);
     }
     
-
-    cl_mem fuzz_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_fuzz_size, ptr_fuzz, &err);
-    if (err < 0) {
-        ERROR("Can not create buffer" << err);
-    }
-
     err = clSetKernelArg(kernel, 3, sizeof(cl_mem), &albedo_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
     }
 
+
+
+
+    cl_mem metal_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                            ptr_metal_size == 0 ? 1 : ptr_metal_size, 
+                            ptr_metal == nullptr ? &NULL_wrapper : ptr_metal, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer" << err);
+    }
+    
     err = clSetKernelArg(kernel, 4, sizeof(cl_mem), &metal_mem);
     if (err < 0) {
         ERROR("Can not set Kernel Argument " << err);
+    }
+
+
+
+
+    cl_mem fuzz_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                            ptr_fuzz_size == 0 ? 1 : ptr_fuzz_size,
+                            ptr_fuzz == nullptr ? &NULL_wrapper : ptr_fuzz, &err);
+    if (err < 0) {
+        ERROR("Can not create buffer" << err);
     }
 
     err = clSetKernelArg(kernel, 5, sizeof(cl_mem), &fuzz_mem);
@@ -346,9 +373,15 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    // Moving Spheres
 
-    cl_mem moving_s = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_moving_spheres_size, ptr_moving_spheres, &err);
+
+
+
+    // // Moving Spheres
+
+    cl_mem moving_s = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                            ptr_moving_spheres_size == 0 ? 1 : ptr_moving_spheres_size,
+                            ptr_moving_spheres == nullptr ? &NULL_wrapper : ptr_moving_spheres, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
@@ -359,7 +392,9 @@ int main(int argc, char** argv)
     }
 
     // BVH
-    cl_mem BVH_kernel_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_BVH_size, ptr_BVH, &err);
+    cl_mem BVH_kernel_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                                ptr_BVH_size == 0 ? 1 : ptr_BVH_size, 
+                                ptr_BVH == nullptr ? &NULL_wrapper : ptr_BVH, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
@@ -369,8 +404,10 @@ int main(int argc, char** argv)
         ERROR("Can not set Kernel Argument " << err);
     }
 
-    // TEKSTURY!!!!!!!!
-    cl_mem solid_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_texture_solid_size, ptr_texture_solid, &err);
+    // // TEKSTURY!!!!!!!!
+    cl_mem solid_mem = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 
+                                ptr_texture_solid_size == 0 ? 1 : ptr_texture_solid_size,
+                                ptr_texture_solid == nullptr ? &NULL_wrapper : ptr_texture_solid, &err);
     if (err < 0) {
         ERROR("Can not create buffer object" << err);
     }
