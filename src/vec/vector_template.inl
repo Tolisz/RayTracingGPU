@@ -154,7 +154,7 @@ namespace vec {
 
     template<typename T>
     T degree_to_radians(const T& deg) {
-        return (deg / 180.0f) * M_PI; 
+        return ( (deg * M_PI) / 180.0f) ; 
     }
 
 } // namespace vec

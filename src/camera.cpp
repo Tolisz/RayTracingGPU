@@ -15,7 +15,7 @@ Camera::Camera(
 )  
     : _time0{_time0}, _time1{_time1}
 {
-    double theta = vec::degree_to_radians(vfov);
+    double theta = 2 * vec::degree_to_radians(vfov);
     double h = std::tan(theta / 2);
     double viewport_height = 2.0 * h;
     double viewport_width = aspect_ratio * viewport_height;

@@ -110,6 +110,17 @@ World test_scene()
     return world;
 }
 
+World two_spheres()
+{
+    World world;
+
+    auto checker = std::make_shared<Checker>(vec::vec3(0.2, 0.3, 0.1), vec::vec3(0.9, 0.9, 0.9));
+    world.add(std::make_shared<Sphere>(vec::vec3(0, -10, 0), 10, std::make_shared<Lambertian>(checker)));
+    world.add(std::make_shared<Sphere>(vec::vec3(0, 10, 0), 10, std::make_shared<Lambertian>(checker)));
+
+    return world;
+}
+
 //  --------------------------------  //
 //                MAIN                //
 //  --------------------------------  // 
@@ -121,23 +132,44 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    //World world = test_scene();
-    World world = random_scene();
+    World world;
+
+    vec::vec3 lookfrom;
+    vec::vec3 lookat;
+    double vfov;
+    double aperture = 0.0;
+    
+    switch(0) {
+        case 1:
+            world = random_scene();
+            lookfrom = {13.0f, 2.0f, 3.0f};
+            lookat = {0.0f, 0.0f, 0.0f};
+            vfov = 20.0f;
+            aperture = 0.1;
+            break;
+
+        default:
+        case 2:
+            world = two_spheres();
+            lookfrom = {13.0f, 2.0f, 3.0f};
+            lookat = {0.0f, 0.0f, 0.0f};
+            vfov = 20.0f;
+            break;
+    }
 
     std::cout << "Utworzylem scene" << std::endl;
 
     // Camera 
-
-    vec::vec3 lookfrom(13,2,3);
-    vec::vec3 lookat(0,0,0);
     vec::vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
-    auto aperture = 0.1;
-
-    // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 1024;
+    // Camera settings
+    Camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0f, 1.0f);
+
+    // Camera class parametrs
+
+    size_t image_width = 400;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
@@ -262,9 +294,7 @@ int main(int argc, char** argv)
     cl_object.set_kernel_arg(0, sizeof(cl_mem), &cl_image);
 
     char NULL_wrapper = '\n';
-    // Camera settings
-
-    Camera cam(lookfrom, lookat, vup, 40, aspect_ratio, aperture, dist_to_focus, 0.0f, 1.0f);
+    
 
     CL_Camera camcl;
     cam.get_cl_structure(&camcl);
