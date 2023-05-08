@@ -13,6 +13,10 @@ typedef struct _Hit_Record
 
     int mat_id;
     int mat_num;
+    
+    // texture coordinates
+    float u;    
+    float v;
 }
 Hit_Record;
 

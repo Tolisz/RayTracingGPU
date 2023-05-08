@@ -17,6 +17,13 @@
     Texture_Checker;
 #endif 
 
-
+float3 texture_checker_value(__global Texture_Checker* texture, int i, float u, float v, float3 p)
+{
+    float sines = sin(10 * p.x) * sin(10 * p.y) * sin(10 * p.z);
+    if (sines < 0)
+        return texture->even[i];
+    else 
+        return texture->odd[i];
+}
 
 #endif

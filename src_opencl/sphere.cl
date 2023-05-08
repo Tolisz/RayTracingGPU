@@ -44,6 +44,22 @@ typedef struct _Sphere
 }
 Sphere;
 
+void sphere_get_uv(float3* p, float* u, float* v)
+{
+    // p: a given point on the sphere of radius one, centered at the origin.
+    // u: returned value [0,1] of angle around the Y axis from X=-1.
+    // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+    //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+    //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+    //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+    float theta = acos(-p->y);
+    float phi = atan2(-p->z, p->x) + M_PI_F;
+
+    *u = phi / (2 * M_PI_F);
+    *v = theta / M_PI_F;
+}
+
 bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* rec)
 {
     float3 oc = ray->origin - sphere->center;
@@ -71,6 +87,7 @@ bool sphere_hit(Sphere* sphere, Ray* ray, float t_min, float t_max, Hit_Record* 
     rec->p = ray_at(ray, rec->t);
     float3 outward_normal = (rec->p - sphere->center) / sphere->r;
     hit_record_set_face_normal(rec, ray, outward_normal);
+    sphere_get_uv(&outward_normal, &rec->u, &rec->v);
     
     return true;
 }

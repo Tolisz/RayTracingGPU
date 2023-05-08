@@ -16,7 +16,7 @@
 bool scatter_lambertian(
     __global Material_Albedo* materials,
     __global Texture_Solid_Color*     texture_solid,
-    __global Texture_Checker*         texture_checer,
+    __global Texture_Checker*         texture_checker,
     Ray* r_in, Hit_Record* rec, float3* attenuation, Ray* scattered, mwc64x_state_t* rng)
 {
     float3 scatter_direction = rec->normal + random_in_unit_sphere(rng);
@@ -42,7 +42,13 @@ bool scatter_lambertian(
         
         case 1:
             {
-                *attenuation = texture_checer->even[materials->tex_num[rec->mat_num]];
+                //if (rec->v < 0.5f) {
+                //    *attenuation = texture_checker->even[materials->tex_num[rec->mat_num]];
+                //} else {
+                //    *attenuation = texture_checker->odd[materials->tex_num[rec->mat_num]];
+                //}
+                *attenuation = texture_checker_value(texture_checker, materials->tex_num[rec->mat_num], 
+                    rec->u, rec->v, rec->p);
             }
             break;
     }

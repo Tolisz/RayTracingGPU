@@ -33,7 +33,8 @@ World random_scene() {
 
     World world;
 
-    auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    //auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    auto ground_material = std::make_shared<Lambertian>(std::make_shared<Checker>(vec::vec3(0.8, 0.2, 0.8), vec::vec3(0.0, 0.2, 0.8)));
     world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
 
     auto random_vec3 = []() -> vec::vec3 
@@ -92,14 +93,15 @@ World test_scene()
 {
     World world;
 
-    auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    //auto ground_material = std::make_shared<Lambertian>(vec::vec3(0.5, 0.5, 0.5));
+    auto ground_material = std::make_shared<Lambertian>(std::make_shared<Checker>(vec::vec3(0.8, 0.2, 0.8), vec::vec3(0.0, 0.2, 0.8)));
     world.add(std::make_shared<Sphere>(vec::vec3(0,-1000,0), 1000, ground_material));
 
     auto material1 = std::make_shared<Dielectric>(1.5);
     world.add(std::make_shared<Sphere>(vec::vec3(0, 1, 0), 1.0, material1));
 
-    //auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
-    auto material2 = std::make_shared<Lambertian>(std::make_shared<Checker>(vec::vec3(0.8, 0.2, 0.8), vec::vec3(0.8, 0.2, 0.8)));
+    auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
+    //auto material2 = std::make_shared<Lambertian>(std::make_shared<Checker>(vec::vec3(0.8, 0.2, 0.8), vec::vec3(0.0, 0.2, 0.8)));
     world.add(std::make_shared<Sphere>(vec::vec3(-4, 1, 0), 1.0, material2));
 
     auto material3 = std::make_shared<Metal>(vec::vec3(0.7, 0.6, 0.5), 0.0);
@@ -119,8 +121,8 @@ int main(int argc, char** argv)
     //   WIRTUALNA SCENA (POCZĄTEK)
     // -----------------------------
 
-    World world = test_scene();
-    //World world = random_scene();
+    //World world = test_scene();
+    World world = random_scene();
 
     std::cout << "Utworzylem scene" << std::endl;
 
@@ -135,7 +137,7 @@ int main(int argc, char** argv)
     // Camera class parametrs
     float aspect_ratio = 9.0f / 16.0f;
 
-    size_t image_width = 400;
+    size_t image_width = 1024;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
