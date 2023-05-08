@@ -98,7 +98,8 @@ World test_scene()
     auto material1 = std::make_shared<Dielectric>(1.5);
     world.add(std::make_shared<Sphere>(vec::vec3(0, 1, 0), 1.0, material1));
 
-    auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
+    //auto material2 = std::make_shared<Lambertian>(vec::vec3(0.4, 0.2, 0.1));
+    auto material2 = std::make_shared<Lambertian>(std::make_shared<Checker>(vec::vec3(0.8, 0.2, 0.8), vec::vec3(0.8, 0.2, 0.8)));
     world.add(std::make_shared<Sphere>(vec::vec3(-4, 1, 0), 1.0, material2));
 
     auto material3 = std::make_shared<Metal>(vec::vec3(0.7, 0.6, 0.5), 0.0);
@@ -181,10 +182,20 @@ int main(int argc, char** argv)
 
     tree.get_cl_structure(&ptr_BVH, &ptr_BVH_size, &ptr_BVH_table_size);
     
+
+
+    // TExTURES !!! 
+
     void* ptr_texture_solid = nullptr;
     size_t ptr_texture_solid_size;
     size_t ptr_texture_solid_table_size;
     Solid_Color_List::get_cl_structure(&ptr_texture_solid, &ptr_texture_solid_size, &ptr_texture_solid_table_size);
+
+    void* ptr_texture_checker = nullptr;
+    std::size_t ptr_texture_checker_size;
+    std::size_t ptr_texture_checker_table_size;
+    Checker_List::get_cl_structure(&ptr_texture_checker, &ptr_texture_checker_size, &ptr_texture_checker_table_size);
+
 
     cl_int err;
 
@@ -212,6 +223,7 @@ int main(int argc, char** argv)
     cl_object.add_define("NUM_OF_BVH"                       , std::to_string(ptr_BVH_table_size));
     cl_object.add_define("BVH_HELP_TABLE_SIZE"              , std::to_string(ptr_BVH_table_size == 0 ? 1 : (int)std::ceil(std::log2f(ptr_BVH_table_size)) + 1));    
     cl_object.add_define("NUM_OF_TEX_SOLID_COLOR"           , std::to_string(ptr_texture_solid_table_size));
+    cl_object.add_define("NUM_OF_TEX_CHECKER"               , std::to_string(ptr_texture_checker_table_size));
 
     std::cout << "BUILD OPTIONS = " << cl_object.get_build_options() << "\n";   
 
@@ -288,6 +300,10 @@ int main(int argc, char** argv)
     cl_mem solid_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_texture_solid_size == 0 ? 1 : ptr_texture_solid_size, ptr_texture_solid == nullptr ? &NULL_wrapper : ptr_texture_solid);
     cl_object.set_kernel_arg(8, sizeof(cl_mem), &solid_mem);
 
+    cl_mem text_checker_mem = cl_object.create_buffer(CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, ptr_texture_checker_size == 0 ? 1 : ptr_texture_checker_size, ptr_texture_checker == nullptr ? &NULL_wrapper : ptr_texture_checker);
+    cl_object.set_kernel_arg(9, sizeof(cl_mem), &text_checker_mem);
+
+
     std::cout << "PUSZCZAM KERNEL" << std::endl;
 
     size_t global_size[2] = {image_height, image_width};
@@ -325,6 +341,8 @@ int main(int argc, char** argv)
     std::free(ptr_fuzz);
     std::free(ptr_spheres);
     std::free(ptr_moving_spheres);
+    std::free(ptr_BVH);
+    std::free(ptr_texture_solid);
 
     return 0;
 }

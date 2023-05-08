@@ -46,3 +46,46 @@ private:
 
     static std::list<Solid_Color*> sol_colors;
 };
+
+
+
+
+
+// ----------- 
+
+
+class Checker: public Texture
+{
+public:
+
+    Checker(const vec::vec3& _odd, const vec::vec3& _even);
+
+    int get_texture_id() const noexcept override;
+    int get_texture_num() const noexcept override;
+
+private:
+
+    static size_t   count;
+    const size_t    tex_id = 1;
+    size_t          tex_num; 
+
+public: 
+
+    vec::vec3 even;
+    vec::vec3 odd;
+};
+
+class Checker_List
+{
+    friend class Checker;
+
+public:
+
+    static bool get_cl_structure(void** ptr, size_t* ptr_size, size_t* table_size) noexcept;
+
+private:
+
+    static std::list<Checker*> check_list;
+};
+
+

@@ -1,6 +1,8 @@
 #ifndef CL_HIT_RECORD
 #define CL_HIT_RECORD
 
+#include "ray.cl"
+
 typedef struct _Hit_Record
 {
     float3 p;

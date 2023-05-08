@@ -8,6 +8,7 @@
 #include "BVH.cl"
 
 #include "texture_solid_color.cl"
+#include "texture_checker.cl"
 
 float3 ray_color
 (
@@ -18,6 +19,7 @@ float3 ray_color
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
     __global Texture_Solid_Color*     texture_solid,
+    __global Texture_Checker*         texture_checer,
     Ray*                              ray, 
     mwc64x_state_t*                   rng
 );
@@ -64,7 +66,8 @@ __kernel void ray_tracer
     __global Material_Reflectance*      mat_reflectance,
     __global Moving_Sphere*             moving_sphere,
     __global BVH_tree*                  bvh_tree, 
-    __global Texture_Solid_Color*       texture_solid)
+    __global Texture_Solid_Color*       texture_solid,
+    __global Texture_Checker*           texture_checker)
 {
     int i = get_global_id(0);   // height
     int j = get_global_id(1);   // width
@@ -90,7 +93,7 @@ __kernel void ray_tracer
         // Ray
         Ray ray = camera_get_ray(cam, &rng, u, v);
         //color += (float3)(0.0f, 1.0f, 1.0f);
-        color += ray_color(spheres_world, moving_sphere, bvh_tree, mat_albedo, mat_fuzz, mat_reflectance, texture_solid, &ray, &rng);
+        color += ray_color(spheres_world, moving_sphere, bvh_tree, mat_albedo, mat_fuzz, mat_reflectance, texture_solid, texture_checker, &ray, &rng);
     }
 
     write_color(image, color);
@@ -111,6 +114,7 @@ float3 ray_color
     __global Material_Fuzz*           mat_fuzz,
     __global Material_Reflectance*    mat_reflectance,
     __global Texture_Solid_Color*     texture_solid,
+    __global Texture_Checker*         texture_checer,
     Ray*                              ray, 
     mwc64x_state_t*                   rng)
 {
@@ -132,7 +136,7 @@ float3 ray_color
                 // Lambertian
                 case 0:
 
-                    if (scatter_lambertian(mat_albedo, texture_solid, ray, &rec, &attenuation, &scattered, rng)) {
+                    if (scatter_lambertian(mat_albedo, texture_solid, texture_checer, ray, &rec, &attenuation, &scattered, rng)) {
                         ray->origin = scattered.origin;
                         ray->direction = scattered.direction;
                         //ray->time = scattered.time;
