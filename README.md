@@ -14,7 +14,7 @@ RayTracing algorithm in this project uses BVH tree as an optimisation method.
 The project uses `Cmake` as a build tool, so the process of building is straightforward
 
 ```Bash
-$ touch build
+$ mkdir build
 $ cd ./build
 $ cmake ..
 $ cmake --build .
