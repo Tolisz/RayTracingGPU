@@ -139,7 +139,7 @@ int main(int argc, char** argv)
     double vfov;
     double aperture = 0.0;
     
-    switch(0) {
+    switch(1) {
         case 1:
             world = random_scene();
             lookfrom = {13.0f, 2.0f, 3.0f};
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 
     // Camera class parametrs
 
-    size_t image_width = 400;
+    size_t image_width = 1024;
     size_t image_height = image_width * aspect_ratio;
 
     // -----------------------------
@@ -242,8 +242,6 @@ int main(int argc, char** argv)
     cl_object.create_program("src_opencl/kelner.cl");
 
     /* OpenCL program and kelner*/
-
-    //std::string kelner_name = "ray_tracer";
 
     cl_object.add_include_dir("./src_opencl");
     

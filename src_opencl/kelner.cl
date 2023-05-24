@@ -220,7 +220,7 @@ bool world_hit
 {   
 
     // Turn on/off BVH tree structure
-    if (false)
+    if (true)
     {
         Hit_Record temp_rec;
         bool hit_anithing = false;
